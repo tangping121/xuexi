@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>✨ 识字闪卡</title>
+<link rel="manifest" href="data:application/json,{}">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;
+  background:linear-gradient(160deg,#FDF2F8 0%,#F3E8FF 50%,#EDF2FF 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  user-select:none;overflow:hidden;
+}
+/* ── Header ── */
+.header{
+  width:100%;padding:16px 20px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{
+  font-size:20px;font-weight:600;
+  background:linear-gradient(135deg,#E83E8C,#9B72AA);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.header-right{display:flex;gap:12px;align-items:center}
+.header-right button{
+  background:none;border:none;font-size:22px;cursor:pointer;padding:4px;
+  transition:transform .2s;
+}
+.header-right button:active{transform:scale(.85)}
+
+/* ── Progress ── */
+.progress-wrap{
+  width:calc(100% - 40px);margin:6px 20px 0;
+  display:flex;align-items:center;gap:10px;
+}
+.progress-bar{
+  flex:1;height:8px;background:#E9D8FD;border-radius:99px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#FF6B9B,#C084FC);
+  transition:width .5s ease;
+}
+.progress-text{font-size:12px;color:#7C3AED;font-weight:500;white-space:nowrap}
+
+/* ── Card Area ── */
+.card-container{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  width:100%;perspective:1200px;padding:12px 16px;
+}
+.card{
+  width:100%;max-width:340px;height:420px;
+  position:relative;cursor:pointer;
+  transition:transform .3s ease;
+}
+.card:active{transform:scale(.97)}
+.card-inner{
+  width:100%;height:100%;
+  position:relative;transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+
+.card-front,.card-back{
+  position:absolute;inset:0;
+  border-radius:28px;backface-visibility:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;box-shadow:0 8px 32px rgba(233,30,99,.15);
+}
+.card-front{
+  background:linear-gradient(145deg,#FFF5F7,#FFE4EC);
+  border:2px solid rgba(255,107,155,.25);
+}
+.card-back{
+  background:linear-gradient(145deg,#FAF5FF,#F3E8FF);
+  border:2px solid rgba(155,114,170,.25);
+  transform:rotateY(180deg);
+}
+.card-category{
+  position:absolute;top:20px;left:24px;
+  font-size:11px;color:#E83E8C;background:rgba(232,62,140,.1);
+  padding:3px 10px;border-radius:99px;font-weight:500;
+}
+.card-back .card-category{color:#7C3AED;background:rgba(124,58,237,.1)}
+.char-main{
+  font-size:120px;font-weight:700;line-height:1;
+  color:#1A1A2E;margin-top:-10px;
+  text-shadow:2px 2px 0 rgba(255,107,155,.15);
+}
+.char-pinyin{
+  font-size:38px;font-weight:500;color:#E83E8C;margin-bottom:4px;
+}
+.char-words{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;
+}
+.char-words span{
+  background:rgba(232,62,140,.1);color:#9B72AA;
+  padding:5px 14px;border-radius:99px;font-size:16px;font-weight:500;
+}
+.card-back .char-words span{background:rgba(124,58,237,.1);color:#7C3AED}
+.char-stroke{
+  position:absolute;bottom:20px;right:24px;
+  font-size:12px;color:#B8A9C9;
+}
+
+/* ── Audio button on back ── */
+.audio-btn{
+  position:absolute;bottom:20px;left:24px;
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#FF6B9B,#C084FC);
+  border:none;color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(192,132,252,.35);
+  transition:transform .2s;
+}
+.audio-btn:active{transform:scale(.85)}
+
+/* ── Star badge ── */
+.star-badge{
+  position:absolute;top:16px;right:20px;
+  font-size:28px;cursor:pointer;
+  transition:transform .3s ease;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.1));
+}
+.star-badge:active{transform:scale(.8)}
+.star-badge.active{animation:starPop .4s ease}
+@keyframes starPop{
+  0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}
+}
+
+/* ── Bottom Controls ── */
+.controls{
+  width:100%;max-width:400px;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:12px 20px 24px;
+}
+.controls button{
+  border:none;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;
+}
+.controls button:active{transform:scale(.85)}
+.btn-nav{
+  width:56px;height:56px;
+  background:#fff;font-size:24px;color:#7C3AED;
+  box-shadow:0 4px 12px rgba(124,58,237,.12);
+}
+.btn-nav:active{box-shadow:0 2px 6px rgba(124,58,237,.08)}
+.btn-shuffle{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,#FF6B9B,#C084FC);
+  font-size:20px;color:#fff;
+  box-shadow:0 4px 12px rgba(192,132,252,.3);
+}
+.btn-learned{
+  padding:0 20px;height:48px;border-radius:99px;
+  background:#fff;font-size:14px;font-weight:600;color:#7C3AED;
+  box-shadow:0 4px 12px rgba(124,58,237,.12);
+  display:flex;align-items:center;gap:6px;
+}
+
+/* ── Settings Panel ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  animation:fadeIn .25s ease;
+}
+.overlay.show{display:block}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.settings{
+  position:fixed;bottom:0;left:0;right:0;z-index:101;
+  background:#fff;border-radius:24px 24px 0 0;
+  max-height:75vh;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 -8px 32px rgba(0,0,0,.12);
+}
+.settings.open{transform:translateY(0)}
+.settings-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 12px;border-bottom:1px solid #F3E8FF;
+}
+.settings-header h2{font-size:17px;font-weight:600;color:#1A1A2E}
+.settings-header button{
+  background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:4px;
+}
+.settings-body{
+  flex:1;overflow-y:auto;padding:12px 20px 24px;
+}
+.settings-body .add-form{
+  display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;
+}
+.settings-body .add-form input{
+  flex:1;min-width:60px;padding:10px 12px;border:2px solid #E9D8FD;
+  border-radius:12px;font-size:14px;outline:none;
+  transition:border-color .2s;
+}
+.settings-body .add-form input:focus{border-color:#C084FC}
+.settings-body .add-form button{
+  padding:10px 20px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#FF6B9B,#C084FC);
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  transition:transform .15s;
+}
+.settings-body .add-form button:active{transform:scale(.92)}
+
+.char-list{display:flex;flex-direction:column;gap:6px}
+.char-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:14px;
+  background:#FAF5FF;transition:background .15s;
+}
+.char-item:active{background:#F3E8FF}
+.char-item .ch{font-size:22px;font-weight:600;width:36px;text-align:center;color:#1A1A2E}
+.char-item .info{flex:1;font-size:13px;color:#7C3AED}
+.char-item .info .py{color:#E83E8C;margin-right:8px}
+.char-item .info .wd{color:#B8A9C9}
+.char-item .star-btn{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;
+  transition:transform .15s;
+}
+.char-item .star-btn:active{transform:scale(.8)}
+.char-item .del-btn{
+  background:none;border:none;font-size:16px;cursor:pointer;color:#ccc;padding:4px;
+  transition:color .15s,transform .15s;
+}
+.char-item .del-btn:active{color:#FF6B9B;transform:scale(.8)}
+
+.empty-state{
+  text-align:center;padding:40px 20px;color:#B8A9C9;font-size:14px;
+}
+
+/* ── Import/Export Buttons ── */
+.io-btns{
+  display:flex;gap:10px;margin-bottom:14px;
+}
+.io-btns button{
+  flex:1;padding:8px;border:2px solid #E9D8FD;
+  border-radius:12px;background:#fff;font-size:13px;color:#7C3AED;
+  cursor:pointer;transition:background .15s;
+}
+.io-btns button:active{background:#FAF5FF}
+
+/* ── Notification Toast ── */
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:10px 24px;
+  border-radius:99px;font-size:14px;z-index:200;
+  opacity:0;transition:opacity .4s ease,transform .4s ease;
+  pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Confetti canvas ── */
+#confetti-canvas{
+  position:fixed;inset:0;z-index:300;pointer-events:none;
+}
+
+/* ── Responsive ── */
+@media(max-width:380px){
+  .card{max-width:300px;height:360px}
+  .char-main{font-size:100px}
+  .char-pinyin{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>🌸 识字闪卡</h1>
+  <div class="header-right">
+    <button id="resetBtn" title="重置进度" style="font-size:18px">🔄</button>
+    <button id="settingsBtn" title="管理字库">⚙️</button>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <span class="progress-text" id="progressText">0 / 0</span>
+</div>
+
+<!-- Card -->
+<div class="card-container">
+  <div class="card" id="card">
+    <div class="card-inner" id="cardInner">
+      <div class="card-front" id="cardFront">
+        <span class="card-category" id="catFront">常用字</span>
+        <div class="char-main" id="charDisplay">大</div>
+        <div class="star-badge" id="starBtn">☆</div>
+      </div>
+      <div class="card-back" id="cardBack">
+        <span class="card-category" id="catBack">常用字</span>
+        <div class="char-pinyin" id="pinyinDisplay">dà</div>
+        <div class="char-words" id="wordsDisplay"></div>
+        <span class="char-stroke" id="strokeDisplay">3 画</span>
+        <button class="audio-btn" id="audioBtn">🔊</button>
+        <div class="star-badge" id="starBtnBack" style="top:16px;right:20px;left:auto">☆</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-nav" id="prevBtn">◀</button>
+  <button class="btn-shuffle" id="shuffleBtn" title="随机一张">🎲</button>
+  <button class="btn-nav" id="nextBtn">▶</button>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
+
+<!-- Settings Panel -->
+<div class="settings" id="settingsPanel">
+  <div class="settings-header">
+    <h2>📚 字库管理</h2>
+    <button id="closeSettings">✕</button>
+  </div>
+  <div class="settings-body">
+    <div class="add-form">
+      <input id="inputChar" placeholder="字" maxlength="1" style="width:50px;flex:none">
+      <input id="inputPinyin" placeholder="拼音" style="flex:1.2">
+      <input id="inputWords" placeholder="词组（逗号分隔）" style="flex:2">
+      <button id="addBtn">添加</button>
+    </div>
+    <div class="io-btns">
+      <button id="importBtn">📥 导入</button>
+      <button id="exportBtn">📤 导出</button>
+    </div>
+    <div class="char-list" id="charList"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".json" style="display:none">
+
+<script>
+// ═══════════════════════════════════════════
+//  Character Data
+// ═══════════════════════════════════════════
+const DEFAULT_CHARS = [
+  // 数字
+  {char:'一',pinyin:'yī',words:['一个','一起','第一'],category:'数字'},
+  {char:'二',pinyin:'èr',words:['二个','第二','二月'],category:'数字'},
+  {char:'三',pinyin:'sān',words:['三个','三月','三角'],category:'数字'},
+  {char:'四',pinyin:'sì',words:['四个','四月','四方'],category:'数字'},
+  {char:'五',pinyin:'wǔ',words:['五个','五月','五星'],category:'数字'},
+  {char:'六',pinyin:'liù',words:['六个','六月','六一'],category:'数字'},
+  {char:'七',pinyin:'qī',words:['七个','七月','七彩'],category:'数字'},
+  {char:'八',pinyin:'bā',words:['八个','八月','八方'],category:'数字'},
+  {char:'九',pinyin:'jiǔ',words:['九个','九月','九日'],category:'数字'},
+  {char:'十',pinyin:'shí',words:['十个','十月','十分'],category:'数字'},
+
+  // 自然
+  {char:'天',pinyin:'tiān',words:['天空','今天','白天'],category:'自然'},
+  {char:'日',pinyin:'rì',words:['日出','生日','节日'],category:'自然'},
+  {char:'月',pinyin:'yuè',words:['月亮','月光','一月'],category:'自然'},
+  {char:'星',pinyin:'xīng',words:['星星','星光','明星'],category:'自然'},
+  {char:'云',pinyin:'yún',words:['白云','云朵','云彩'],category:'自然'},
+  {char:'风',pinyin:'fēng',words:['大风','风雨','风车'],category:'自然'},
+  {char:'雨',pinyin:'yǔ',words:['下雨','雨水','雨伞'],category:'自然'},
+  {char:'雪',pinyin:'xuě',words:['下雪','雪花','雪人'],category:'自然'},
+  {char:'水',pinyin:'shuǐ',words:['水果','喝水','海水'],category:'自然'},
+  {char:'火',pinyin:'huǒ',words:['大火','火车','火花'],category:'自然'},
+
+  // 动物
+  {char:'大',pinyin:'dà',words:['大人','大小','大家'],category:'常用'},
+  {char:'小',pinyin:'xiǎo',words:['小鸟','小心','大小'],category:'常用'},
+  {char:'鸟',pinyin:'niǎo',words:['小鸟','鸟窝','鸟蛋'],category:'动物'},
+  {char:'鱼',pinyin:'yú',words:['小鱼','金鱼','鱼儿'],category:'动物'},
+  {char:'马',pinyin:'mǎ',words:['小马','马上','马路'],category:'动物'},
+  {char:'牛',pinyin:'niú',words:['小牛','牛奶','牛角'],category:'动物'},
+  {char:'羊',pinyin:'yáng',words:['小羊','山羊','羊毛'],category:'动物'},
+  {char:'虫',pinyin:'chóng',words:['虫子','小虫','毛毛虫'],category:'动物'},
+  {char:'花',pinyin:'huā',words:['花朵','小花','花园'],category:'植物'},
+  {char:'草',pinyin:'cǎo',words:['小草','草地','花草'],category:'植物'},
+
+  // 身体
+  {char:'人',pinyin:'rén',words:['大人','人生','人们'],category:'常用'},
+  {char:'口',pinyin:'kǒu',words:['人口','开口','门口'],category:'身体'},
+  {char:'手',pinyin:'shǒu',words:['小手','手工','双手'],category:'身体'},
+  {char:'目',pinyin:'mù',words:['目光','目前','目的'],category:'身体'},
+
+  // 方位
+  {char:'上',pinyin:'shàng',words:['上面','上学','上午'],category:'方位'},
+  {char:'下',pinyin:'xià',words:['下面','下雨','下午'],category:'方位'},
+  {char:'左',pinyin:'zuǒ',words:['左手','左边','左右'],category:'方位'},
+  {char:'右',pinyin:'yòu',words:['右手','右边','左右'],category:'方位'},
+  {char:'东',pinyin:'dōng',words:['东方','东边','东风'],category:'方位'},
+  {char:'西',pinyin:'xī',words:['西方','西边','西瓜'],category:'方位'},
+  {char:'南',pinyin:'nán',words:['南方','南边','南瓜'],category:'方位'},
+  {char:'北',pinyin:'běi',words:['北方','北边','北京'],category:'方位'},
+
+  // 颜色
+  {char:'红',pinyin:'hóng',words:['红色','红花','红旗'],category:'颜色'},
+  {char:'黄',pinyin:'huáng',words:['黄色','黄花','金黄'],category:'颜色'},
+  {char:'蓝',pinyin:'lán',words:['蓝色','蓝天','蓝花'],category:'颜色'},
+  {char:'绿',pinyin:'lǜ',words:['绿色','绿叶','碧绿'],category:'颜色'},
+  {char:'白',pinyin:'bái',words:['白色','白云','白天'],category:'颜色'},
+  {char:'黑',pinyin:'hēi',words:['黑色','黑夜','黑白'],category:'颜色'},
+
+  // 日常
+  {char:'门',pinyin:'mén',words:['门口','大门','开门'],category:'日常'},
+  {char:'窗',pinyin:'chuāng',words:['窗户','窗口','窗花'],category:'日常'},
+  {char:'书',pinyin:'shū',words:['书本','看书','书包'],category:'日常'},
+  {char:'笔',pinyin:'bǐ',words:['铅笔','毛笔','画笔'],category:'日常'},
+  {char:'画',pinyin:'huà',words:['画画','画笔','图画'],category:'日常'},
+  {char:'米',pinyin:'mǐ',words:['大米','米饭','米花'],category:'日常'},
+  {char:'饭',pinyin:'fàn',words:['米饭','吃饭','饭菜'],category:'日常'},
+  {char:'奶',pinyin:'nǎi',words:['牛奶','奶奶','奶油'],category:'日常'},
+  {char:'蛋',pinyin:'dàn',words:['鸡蛋','蛋糕','蛋花'],category:'日常'},
+  {char:'果',pinyin:'guǒ',words:['水果','苹果','果子'],category:'日常'},
+
+  // 动作
+  {char:'走',pinyin:'zǒu',words:['走路','行走','走开'],category:'动作'},
+  {char:'跑',pinyin:'pǎo',words:['跑步','奔跑','快跑'],category:'动作'},
+  {char:'跳',pinyin:'tiào',words:['跳高','跳绳','跳远'],category:'动作'},
+  {char:'飞',pinyin:'fēi',words:['飞机','起飞','飞翔'],category:'动作'},
+  {char:'看',pinyin:'kàn',words:['看见','看书','观看'],category:'动作'},
+  {char:'听',pinyin:'tīng',words:['听见','听话','听说'],category:'动作'},
+  {char:'说',pinyin:'shuō',words:['说话','听说','说明'],category:'动作'},
+  {char:'读',pinyin:'dú',words:['读书','阅读','朗读'],category:'动作'},
+  {char:'写',pinyin:'xiě',words:['写字','书写','写作'],category:'动作'},
+  {char:'玩',pinyin:'wán',words:['玩耍','游玩','好玩'],category:'动作'},
+
+  // 情感
+  {char:'笑',pinyin:'xiào',words:['微笑','大笑','笑声'],category:'情感'},
+  {char:'哭',pinyin:'kū',words:['大哭','哭声','哭泣'],category:'情感'},
+  {char:'爱',pinyin:'ài',words:['爱心','可爱','爱护'],category:'情感'},
+  {char:'好',pinyin:'hǎo',words:['好人','好的','好看'],category:'情感'},
+  {char:'美',pinyin:'měi',words:['美丽','美好','美术'],category:'情感'},
+  {char:'新',pinyin:'xīn',words:['新年','新鲜','新衣'],category:'情感'},
+  {char:'乐',pinyin:'lè',words:['快乐','欢乐','乐园'],category:'情感'},
+  {char:'心',pinyin:'xīn',words:['开心','心情','爱心'],category:'情感'},
+
+  // 人称
+  {char:'我',pinyin:'wǒ',words:['我们','我的','自我'],category:'人称'},
+  {char:'你',pinyin:'nǐ',words:['你好','你的','你们'],category:'人称'},
+  {char:'他',pinyin:'tā',words:['他们','他的','其他'],category:'人称'},
+  {char:'她',pinyin:'tā',words:['她们','她的','她家'],category:'人称'},
+  {char:'们',pinyin:'men',words:['我们','你们','他们'],category:'人称'},
+  {char:'的',pinyin:'de',words:['好的','我的','你的'],category:'人称'},
+];
+
+// ═══════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════
+let chars = [];
+let learned = new Set();   // set of char strings
+let currentIndex = 0;
+let isFlipped = false;
+let isShuffled = false;
+
+const STORAGE_KEY = 'flashcard_chars';
+const LEARNED_KEY = 'flashcard_learned';
+
+// ═══════════════════════════════════════════
+//  DOM
+// ═══════════════════════════════════════════
+const card = document.getElementById('card');
+const cardInner = document.getElementById('cardInner');
+const charDisplay = document.getElementById('charDisplay');
+const pinyinDisplay = document.getElementById('pinyinDisplay');
+const wordsDisplay = document.getElementById('wordsDisplay');
+const catFront = document.getElementById('catFront');
+const catBack = document.getElementById('catBack');
+const strokeDisplay = document.getElementById('strokeDisplay');
+const starBtn = document.getElementById('starBtn');
+const starBtnBack = document.getElementById('starBtnBack');
+const audioBtn = document.getElementById('audioBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const settingsBtn = document.getElementById('settingsBtn');
+const closeSettings = document.getElementById('closeSettings');
+const overlay = document.getElementById('overlay');
+const settingsPanel = document.getElementById('settingsPanel');
+const charList = document.getElementById('charList');
+const inputChar = document.getElementById('inputChar');
+const inputPinyin = document.getElementById('inputPinyin');
+const inputWords = document.getElementById('inputWords');
+const addBtn = document.getElementById('addBtn');
+const resetBtn = document.getElementById('resetBtn');
+const importBtn = document.getElementById('importBtn');
+const exportBtn = document.getElementById('exportBtn');
+const fileInput = document.getElementById('fileInput');
+const toast = document.getElementById('toast');
+
+// ═══════════════════════════════════════════
+//  Storage
+// ═══════════════════════════════════════════
+function loadData(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    chars = saved ? JSON.parse(saved) : null;
+  }catch(e){chars=null}
+  if(!chars||!chars.length){
+    chars = DEFAULT_CHARS.map(c=>({...c}));
+    saveChars();
+  }
+  try{
+    const l = localStorage.getItem(LEARNED_KEY);
+    learned = l ? new Set(JSON.parse(l)) : new Set();
+  }catch(e){learned=new Set()}
+}
+function saveChars(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(chars));
+}
+function saveLearned(){
+  localStorage.setItem(LEARNED_KEY,JSON.stringify([...learned]));
+}
+
+// ═══════════════════════════════════════════
+//  Rendering
+// ═══════════════════════════════════════════
+function renderCard(){
+  if(!chars.length){
+    charDisplay.textContent='📭';
+    pinyinDisplay.textContent='暂无字卡';
+    wordsDisplay.innerHTML='<span>请先添加汉字</span>';
+    catFront.textContent='';
+    catBack.textContent='';
+    strokeDisplay.textContent='';
+    starBtn.textContent='☆';
+    starBtnBack.textContent='☆';
+    return;
+  }
+  if(currentIndex>=chars.length)currentIndex=0;
+  if(currentIndex<0)currentIndex=chars.length-1;
+  const c = chars[currentIndex];
+  charDisplay.textContent = c.char;
+  pinyinDisplay.textContent = c.pinyin;
+  catFront.textContent = c.category||'常用';
+  catBack.textContent = c.category||'常用';
+  strokeDisplay.textContent = (c.stroke||'?')+' 画';
+  wordsDisplay.innerHTML = (c.words||[]).map(w=>`<span>${w}</span>`).join('');
+  updateStar();
+  updateProgress();
+}
+
+function updateStar(){
+  if(!chars.length)return;
+  const c = chars[currentIndex];
+  const isLearned = learned.has(c.char);
+  const s = isLearned ? '⭐' : '☆';
+  starBtn.textContent = s;
+  starBtnBack.textContent = s;
+  if(isLearned){starBtn.classList.add('active');starBtnBack.classList.add('active')}
+  else{starBtn.classList.remove('active');starBtnBack.classList.remove('active')}
+}
+
+function updateProgress(){
+  const total = chars.length;
+  const done = [...learned].filter(ch=>chars.some(c=>c.char===ch)).size;
+  const pct = total ? Math.round(done/total*100) : 0;
+  progressFill.style.width = pct+'%';
+  progressText.textContent = done+' / '+total;
+}
+
+function flipCard(flip){
+  isFlipped = flip;
+  card.classList.toggle('flipped',flip);
+}
+
+// ═══════════════════════════════════════════
+//  Audio
+// ═══════════════════════════════════════════
+function speakChar(c){
+  if(!c)return;
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(c.char);
+  u.lang='zh-CN';u.rate=.85;u.pitch=1.1;
+  window.speechSynthesis.speak(u);
+}
+function speakPinyin(c){
+  if(!c)return;
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(c.pinyin);
+  u.lang='zh-CN';u.rate=.75;u.pitch=1.05;
+  window.speechSynthesis.speak(u);
+}
+
+// ═══════════════════════════════════════════
+//  Confetti
+// ═══════════════════════════════════════════
+function showConfetti(){
+  const canvas = document.getElementById('confetti-canvas')||(()=>{
+    const c=document.createElement('canvas');
+    c.id='confetti-canvas';document.body.appendChild(c);return c;
+  })();
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const colors=['#FF6B9B','#C084FC','#FFD93D','#4CAF50','#FF8A65','#81C784','#64B5F6'];
+  const particles=[];
+  for(let i=0;i<80;i++){
+    particles.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height*-1,
+      w:6+Math.random()*6,
+      h:4+Math.random()*4,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      vy:2+Math.random()*3,
+      vx:-1+Math.random()*2,
+      rot:Math.random()*360,
+      rv:-3+Math.random()*6,
+      alpha:1,
+    });
+  }
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    for(const p of particles){
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;
+      p.alpha-=0.003;
+      if(p.alpha<=0)continue;
+      alive=true;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha=p.alpha;
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    }
+    frame++;
+    if(alive&&frame<300)requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.width=0;canvas.height=0}
+  }
+  draw();
+}
+
+// ═══════════════════════════════════════════
+//  Events
+// ═══════════════════════════════════════════
+
+// Card tap → flip
+card.addEventListener('click',()=>{
+  if(!chars.length)return;
+  flipCard(!isFlipped);
+  if(!isFlipped){
+    const c=chars[currentIndex];
+    speakChar(c);
+  }
+});
+
+// Audio button
+audioBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(!chars.length)return;
+  const c=chars[currentIndex];
+  speakChar(c);
+  setTimeout(()=>speakPinyin(c),500);
+});
+
+// Star
+function toggleStar(){
+  if(!chars.length)return;
+  const c=chars[currentIndex];
+  if(learned.has(c.char)){
+    learned.delete(c.char);
+    showToast('取消学会');
+  }else{
+    learned.add(c.char);
+    showToast('⭐ 学会啦！');
+    showConfetti();
+  }
+  saveLearned();
+  updateStar();
+  updateProgress();
+}
+starBtn.addEventListener('click',e=>{e.stopPropagation();toggleStar()});
+starBtnBack.addEventListener('click',e=>{e.stopPropagation();toggleStar()});
+
+// Navigation
+prevBtn.addEventListener('click',()=>{
+  if(!chars.length)return;
+  flipCard(false);
+  currentIndex = (currentIndex-1+chars.length)%chars.length;
+  renderCard();
+});
+nextBtn.addEventListener('click',()=>{
+  if(!chars.length)return;
+  flipCard(false);
+  currentIndex = (currentIndex+1)%chars.length;
+  renderCard();
+});
+
+// Swipe support
+let touchStartX=0;
+card.addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].screenX},{passive:true});
+card.addEventListener('touchend',e=>{
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  if(Math.abs(dx)>60){
+    flipCard(false);
+    if(dx>0)prevBtn.click();
+    else nextBtn.click();
+  }
+});
+
+// Shuffle
+shuffleBtn.addEventListener('click',()=>{
+  if(chars.length<2)return;
+  flipCard(false);
+  let idx;
+  do{idx=Math.floor(Math.random()*chars.length)}while(idx===currentIndex&&chars.length>1);
+  currentIndex=idx;
+  renderCard();
+  showToast('🎲 随机一张');
+});
+
+// Settings
+settingsBtn.addEventListener('click',()=>{
+  overlay.classList.add('show');
+  settingsPanel.classList.add('open');
+  renderCharList();
+});
+closeSettings.addEventListener('click',closeSettingsPanel);
+overlay.addEventListener('click',closeSettingsPanel);
+function closeSettingsPanel(){
+  overlay.classList.remove('show');
+  settingsPanel.classList.remove('open');
+}
+
+// Add character
+addBtn.addEventListener('click',()=>{
+  const ch = inputChar.value.trim();
+  const py = inputPinyin.value.trim();
+  const ws = inputWords.value.trim();
+  if(!ch){showToast('请输入汉字');return}
+  if(!py){showToast('请输入拼音');return}
+  if(chars.some(c=>c.char===ch)){showToast('这个字已经有了');return}
+  chars.push({
+    char:ch,
+    pinyin:py,
+    words:ws?ws.split(/[,，、\s]+/).filter(Boolean):[],
+    category:'自定义',
+  });
+  saveChars();
+  inputChar.value='';inputPinyin.value='';inputWords.value='';
+  inputChar.focus();
+  renderCharList();
+  renderCard();
+  showToast('✅ 已添加「'+ch+'」');
+});
+
+// Delete character
+function deleteChar(index){
+  const c = chars[index];
+  chars.splice(index,1);
+  learned.delete(c.char);
+  saveChars();saveLearned();
+  if(currentIndex>=chars.length)currentIndex=Math.max(0,chars.length-1);
+  renderCharList();
+  renderCard();
+  showToast('已删除「'+c.char+'」');
+}
+
+// Toggle star in list
+function toggleLearned(ch){
+  if(learned.has(ch)){learned.delete(ch);showToast('取消学会')}
+  else{learned.add(ch);showToast('⭐ 学会啦！')}
+  saveLearned();
+  renderCharList();
+  renderCard();
+}
+
+function renderCharList(){
+  if(!chars.length){
+    charList.innerHTML='<div class="empty-state">还没有字卡，来添加第一个吧 ✨</div>';
+    return;
+  }
+  charList.innerHTML = chars.map((c,i)=>{
+    const isL = learned.has(c.char);
+    return `<div class="char-item">
+      <span class="ch">${c.char}</span>
+      <span class="info">
+        <span class="py">${c.pinyin}</span>
+        <span class="wd">${(c.words||[]).slice(0,3).join(' / ')}</span>
+      </span>
+      <button class="star-btn" data-idx="${i}" data-action="star">${isL?'⭐':'☆'}</button>
+      <button class="del-btn" data-idx="${i}" data-action="del">✕</button>
+    </div>`;
+  }).join('');
+  charList.querySelectorAll('.star-btn').forEach(b=>{
+    b.addEventListener('click',e=>{
+      e.stopPropagation();
+      const idx=parseInt(b.dataset.idx);
+      toggleLearned(chars[idx].char);
+    });
+  });
+  charList.querySelectorAll('.del-btn').forEach(b=>{
+    b.addEventListener('click',e=>{
+      e.stopPropagation();
+      const idx=parseInt(b.dataset.idx);
+      deleteChar(idx);
+    });
+  });
+}
+
+// Import
+importBtn.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{
+  const file = e.target.files[0];
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!Array.isArray(data)){showToast('格式不对，需要JSON数组');return}
+      if(data.some(d=>!d.char||!d.pinyin)){showToast('每条数据需要 char 和 pinyin 字段');return}
+      // merge: overwrite existing by char
+      for(const d of data){
+        const idx = chars.findIndex(c=>c.char===d.char);
+        if(idx>=0)chars[idx]=d;
+        else chars.push(d);
+      }
+      saveChars();
+      renderCharList();
+      renderCard();
+      showToast('📥 导入 '+data.length+' 个字');
+    }catch(e){showToast('导入失败：JSON 格式错误')}
+  };
+  reader.readAsText(file);
+  fileInput.value='';
+});
+
+// Export
+exportBtn.addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify(chars,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '识字闪卡_字库.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('📤 导出成功');
+});
+
+// Reset progress
+resetBtn.addEventListener('click',()=>{
+  if(learned.size===0){showToast('还没有学会的字');return}
+  if(confirm('确定要重置所有学习进度吗？')){
+    learned.clear();
+    saveLearned();
+    renderCard();
+    showToast('🔄 进度已重置');
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft')prevBtn.click();
+  else if(e.key==='ArrowRight')nextBtn.click();
+  else if(e.key===' '){e.preventDefault();card.click()}
+  else if(e.key==='f'||e.key==='F')toggleStar();
+});
+
+// ═══════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg){
+  toast.textContent=msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),1500);
+}
+
+// ═══════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════
+loadData();
+renderCard();
+</script>
+</body>
+</html>

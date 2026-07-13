@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🌈 英语闪卡</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#F0FDF4 0%,#ECFDF5 50%,#FFF7ED 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  user-select:none;overflow:hidden;
+}
+.header{
+  width:100%;padding:16px 20px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{
+  font-size:20px;font-weight:600;
+  background:linear-gradient(135deg,#10B981,#F59E0B);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.header-right{display:flex;gap:12px;align-items:center}
+.header-right button{
+  background:none;border:none;font-size:22px;cursor:pointer;padding:4px;
+  transition:transform .2s;
+}
+.header-right button:active{transform:scale(.85)}
+
+.progress-wrap{
+  width:calc(100% - 40px);margin:6px 20px 0;
+  display:flex;align-items:center;gap:10px;
+}
+.progress-bar{
+  flex:1;height:8px;background:#D1FAE5;border-radius:99px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#34D399,#FBBF24);
+  transition:width .5s ease;
+}
+.progress-text{font-size:12px;color:#059669;font-weight:500;white-space:nowrap}
+
+.cat-tabs{
+  display:flex;gap:8px;width:calc(100%-40px);padding:6px 20px 0;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;
+}
+.cat-tab{
+  flex-shrink:0;padding:5px 14px;border-radius:99px;
+  font-size:13px;font-weight:500;cursor:pointer;
+  background:#fff;color:#6B7280;border:2px solid #E5E7EB;
+  transition:all .2s;
+}
+.cat-tab.active{background:#D1FAE5;color:#059669;border-color:#6EE7B7}
+
+.card-container{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  width:100%;perspective:1200px;padding:8px 16px;
+}
+.card{
+  width:100%;max-width:340px;height:400px;
+  position:relative;cursor:pointer;
+  transition:transform .3s ease;
+}
+.card:active{transform:scale(.97)}
+.card-inner{
+  width:100%;height:100%;
+  position:relative;transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+
+.card-front,.card-back{
+  position:absolute;inset:0;
+  border-radius:28px;backface-visibility:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;box-shadow:0 8px 32px rgba(16,185,129,.12);
+}
+.card-front{
+  background:linear-gradient(145deg,#F0FDF4,#D1FAE5);
+  border:2px solid rgba(16,185,129,.2);
+}
+.card-back{
+  background:linear-gradient(145deg,#FFFBEB,#FDE68A);
+  border:2px solid rgba(245,158,11,.2);
+  transform:rotateY(180deg);
+}
+.emoji-big{font-size:100px;line-height:1.2;margin-bottom:6px}
+.card-front .hint{
+  font-size:14px;color:#6B7280;background:rgba(107,114,128,.08);
+  padding:4px 16px;border-radius:99px;
+}
+.word-main{
+  font-size:48px;font-weight:700;color:#1A1A2E;letter-spacing:2px;
+}
+.word-chinese{
+  font-size:16px;color:#D97706;margin-top:4px;
+}
+.word-phonetic{
+  font-size:15px;color:#92400E;margin-top:2px;font-style:italic;
+}
+.word-example{
+  font-size:14px;color:#6B7280;margin-top:8px;
+  background:rgba(107,114,128,.08);padding:5px 14px;border-radius:99px;
+}
+
+.audio-btn{
+  margin-top:14px;width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#10B981,#F59E0B);
+  border:none;color:#fff;font-size:24px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(245,158,11,.3);
+  transition:transform .2s;
+}
+.audio-btn:active{transform:scale(.85)}
+
+.star-badge{
+  position:absolute;top:16px;right:20px;
+  font-size:28px;cursor:pointer;
+  transition:transform .3s ease;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.1));
+}
+.star-badge:active{transform:scale(.8)}
+.star-badge.active{animation:starPop .4s ease}
+@keyframes starPop{
+  0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}
+}
+
+.controls{
+  width:100%;max-width:400px;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:10px 20px 24px;
+}
+.controls button{
+  border:none;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+}
+.controls button:active{transform:scale(.85)}
+.btn-nav{
+  width:56px;height:56px;
+  background:#fff;font-size:24px;color:#059669;
+  box-shadow:0 4px 12px rgba(16,185,129,.12);
+}
+.btn-shuffle{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,#10B981,#F59E0B);
+  font-size:20px;color:#fff;
+  box-shadow:0 4px 12px rgba(245,158,11,.3);
+}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:10px 24px;
+  border-radius:99px;font-size:14px;z-index:200;
+  opacity:0;transition:opacity .4s ease;
+  pointer-events:none;
+}
+.toast.show{opacity:1}
+
+#confetti-canvas{position:fixed;inset:0;z-index:300;pointer-events:none}
+
+@media(max-width:380px){
+  .card{max-width:300px;height:350px}
+  .emoji-big{font-size:80px}
+  .word-main{font-size:38px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌈 英语闪卡</h1>
+  <div class="header-right">
+    <button id="resetBtn" title="重置进度">🔄</button>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <span class="progress-text" id="progressText">0 / 0</span>
+</div>
+
+<div class="cat-tabs" id="catTabs"></div>
+
+<div class="card-container">
+  <div class="card" id="card">
+    <div class="card-inner" id="cardInner">
+      <div class="card-front">
+        <div class="emoji-big" id="emojiDisplay">🐱</div>
+        <span class="hint">👆 猜猜看～</span>
+        <div class="star-badge" id="starBtn">☆</div>
+      </div>
+      <div class="card-back">
+        <div class="word-main" id="wordDisplay">cat</div>
+        <div class="word-phonetic" id="phoneticDisplay">/kæt/</div>
+        <div class="word-chinese" id="chineseDisplay">猫</div>
+        <div class="word-example" id="exampleDisplay">a cute cat</div>
+        <button class="audio-btn" id="audioBtn">🔊</button>
+        <div class="star-badge" id="starBtnBack">☆</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn-nav" id="prevBtn">◀</button>
+  <button class="btn-shuffle" id="shuffleBtn">🎲</button>
+  <button class="btn-nav" id="nextBtn">▶</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="confetti-canvas"></canvas>
+
+<script>
+const WORDS = [
+  // Animals
+  {cat:'动物',emoji:'🐱',word:'cat',phonetic:'/kæt/',chinese:'猫',example:'a cute cat'},
+  {cat:'动物',emoji:'🐶',word:'dog',phonetic:'/dɒɡ/',chinese:'狗',example:'a happy dog'},
+  {cat:'动物',emoji:'🐟',word:'fish',phonetic:'/fɪʃ/',chinese:'鱼',example:'a little fish'},
+  {cat:'动物',emoji:'🐦',word:'bird',phonetic:'/bɜːd/',chinese:'鸟',example:'a small bird'},
+  {cat:'动物',emoji:'🐄',word:'cow',phonetic:'/kaʊ/',chinese:'奶牛',example:'a white cow'},
+  {cat:'动物',emoji:'🐷',word:'pig',phonetic:'/pɪɡ/',chinese:'猪',example:'a pink pig'},
+  {cat:'动物',emoji:'🦆',word:'duck',phonetic:'/dʌk/',chinese:'鸭子',example:'a yellow duck'},
+  {cat:'动物',emoji:'🐸',word:'frog',phonetic:'/frɒɡ/',chinese:'青蛙',example:'a green frog'},
+  {cat:'动物',emoji:'🐻',word:'bear',phonetic:'/beə/',chinese:'熊',example:'a brown bear'},
+  {cat:'动物',emoji:'🐰',word:'rabbit',phonetic:'/ˈræb.ɪt/',chinese:'兔子',example:'a white rabbit'},
+  {cat:'动物',emoji:'🐴',word:'horse',phonetic:'/hɔːs/',chinese:'马',example:'a fast horse'},
+  {cat:'动物',emoji:'🐑',word:'sheep',phonetic:'/ʃiːp/',chinese:'羊',example:'a fluffy sheep'},
+  {cat:'动物',emoji:'🐵',word:'monkey',phonetic:'/ˈmʌŋ.ki/',chinese:'猴子',example:'a funny monkey'},
+  {cat:'动物',emoji:'🐘',word:'elephant',phonetic:'/ˈel.ɪ.fənt/',chinese:'大象',example:'a big elephant'},
+  {cat:'动物',emoji:'🦁',word:'lion',phonetic:'/ˈlaɪ.ən/',chinese:'狮子',example:'a strong lion'},
+  {cat:'动物',emoji:'🐯',word:'tiger',phonetic:'/ˈtaɪ.ɡə/',chinese:'老虎',example:'a orange tiger'},
+
+  // Colors
+  {cat:'颜色',emoji:'🔴',word:'red',phonetic:'/red/',chinese:'红色',example:'a red apple'},
+  {cat:'颜色',emoji:'🔵',word:'blue',phonetic:'/bluː/',chinese:'蓝色',example:'blue sky'},
+  {cat:'颜色',emoji:'🟢',word:'green',phonetic:'/ɡriːn/',chinese:'绿色',example:'green grass'},
+  {cat:'颜色',emoji:'🟡',word:'yellow',phonetic:'/ˈjel.əʊ/',chinese:'黄色',example:'yellow sun'},
+  {cat:'颜色',emoji:'🩷',word:'pink',phonetic:'/pɪŋk/',chinese:'粉色',example:'a pink flower'},
+  {cat:'颜色',emoji:'🟣',word:'purple',phonetic:'/ˈpɜː.pəl/',chinese:'紫色',example:'a purple dress'},
+  {cat:'颜色',emoji:'⚪',word:'white',phonetic:'/waɪt/',chinese:'白色',example:'white snow'},
+  {cat:'颜色',emoji:'⚫',word:'black',phonetic:'/blæk/',chinese:'黑色',example:'a black cat'},
+  {cat:'颜色',emoji:'🟠',word:'orange',phonetic:'/ˈɒr.ɪndʒ/',chinese:'橙色',example:'an orange ball'},
+  {cat:'颜色',emoji:'🟤',word:'brown',phonetic:'/braʊn/',chinese:'棕色',example:'brown bear'},
+
+  // Fruits
+  {cat:'水果',emoji:'🍎',word:'apple',phonetic:'/ˈæp.əl/',chinese:'苹果',example:'a red apple'},
+  {cat:'水果',emoji:'🍌',word:'banana',phonetic:'/bəˈnɑː.nə/',chinese:'香蕉',example:'a yellow banana'},
+  {cat:'水果',emoji:'🍊',word:'orange',phonetic:'/ˈɒr.ɪndʒ/',chinese:'橙子',example:'a sweet orange'},
+  {cat:'水果',emoji:'🍇',word:'grape',phonetic:'/ɡreɪp/',chinese:'葡萄',example:'purple grapes'},
+  {cat:'水果',emoji:'🍐',word:'pear',phonetic:'/peə/',chinese:'梨',example:'a juicy pear'},
+  {cat:'水果',emoji:'🍑',word:'peach',phonetic:'/piːtʃ/',chinese:'桃子',example:'a pink peach'},
+  {cat:'水果',emoji:'🍋',word:'lemon',phonetic:'/ˈlem.ən/',chinese:'柠檬',example:'a sour lemon'},
+
+  // Body
+  {cat:'身体',emoji:'👁️',word:'eye',phonetic:'/aɪ/',chinese:'眼睛',example:'big eyes'},
+  {cat:'身体',emoji:'👃',word:'nose',phonetic:'/nəʊz/',chinese:'鼻子',example:'a small nose'},
+  {cat:'身体',emoji:'👄',word:'mouth',phonetic:'/maʊθ/',chinese:'嘴巴',example:'a big mouth'},
+  {cat:'身体',emoji:'👂',word:'ear',phonetic:'/ɪə/',chinese:'耳朵',example:'long ears'},
+  {cat:'身体',emoji:'✋',word:'hand',phonetic:'/hænd/',chinese:'手',example:'clean hands'},
+  {cat:'身体',emoji:'🦶',word:'foot',phonetic:'/fʊt/',chinese:'脚',example:'two feet'},
+  {cat:'身体',emoji:'🧠',word:'head',phonetic:'/hed/',chinese:'头',example:'a big head'},
+];
+
+let activeCat = '全部';
+let filtered = WORDS;
+let currentIndex = 0;
+let isFlipped = false;
+let learned = new Set();
+const LEARNED_KEY = 'en_flashcard_learned';
+
+// DOM
+const card=document.getElementById('card');
+const emojiD=document.getElementById('emojiDisplay');
+const wordD=document.getElementById('wordDisplay');
+const phoneticD=document.getElementById('phoneticDisplay');
+const chineseD=document.getElementById('chineseDisplay');
+const exampleD=document.getElementById('exampleDisplay');
+const starBtn=document.getElementById('starBtn');
+const starBtnBack=document.getElementById('starBtnBack');
+const audioBtn=document.getElementById('audioBtn');
+const catTabs=document.getElementById('catTabs');
+const progressFill=document.getElementById('progressFill');
+const progressText=document.getElementById('progressText');
+const toast=document.getElementById('toast');
+
+function loadState(){
+  try{const l=localStorage.getItem(LEARNED_KEY);if(l)learned=new Set(JSON.parse(l))}catch(e){}
+}
+function saveState(){localStorage.setItem(LEARNED_KEY,JSON.stringify([...learned]))}
+
+function buildCatTabs(){
+  const cats=['全部',...new Set(WORDS.map(w=>w.cat))];
+  catTabs.innerHTML=cats.map(c=>
+    `<span class="cat-tab${c===activeCat?' active':''}" data-cat="${c}">${c==='全部'?'🌈 全部':c}</span>`
+  ).join('');
+  catTabs.querySelectorAll('.cat-tab').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(el.dataset.cat===activeCat)return;
+      activeCat=el.dataset.cat;
+      filtered=activeCat==='全部'?WORDS:WORDS.filter(w=>w.cat===activeCat);
+      currentIndex=0;isFlipped=false;card.classList.remove('flipped');
+      buildCatTabs();
+      renderCard();
+    });
+  });
+}
+
+function renderCard(){
+  if(!filtered.length){
+    wordD.textContent='📭';phoneticD.textContent='';chineseD.textContent='';
+    exampleD.textContent='该分类暂无单词';emojiD.textContent='🤷';
+    starBtn.textContent='☆';starBtnBack.textContent='☆';
+    return;
+  }
+  if(currentIndex>=filtered.length)currentIndex=0;
+  if(currentIndex<0)currentIndex=filtered.length-1;
+  const w=filtered[currentIndex];
+  emojiD.textContent=w.emoji;
+  wordD.textContent=w.word;
+  phoneticD.textContent=w.phonetic;
+  chineseD.textContent=w.chinese;
+  exampleD.textContent=w.example;
+  updateStar();
+  updateProgress();
+}
+
+function updateStar(){
+  if(!filtered.length)return;
+  const w=filtered[currentIndex];
+  const l=learned.has(w.word);
+  starBtn.textContent=l?'⭐':'☆';
+  starBtnBack.textContent=l?'⭐':'☆';
+  starBtn.classList.toggle('active',l);
+  starBtnBack.classList.toggle('active',l);
+}
+
+function updateProgress(){
+  const total=filtered.length;
+  const done=[...learned].filter(w=>filtered.some(f=>f.word===w)).length;
+  const pct=total?Math.round(done/total*100):0;
+  progressFill.style.width=pct+'%';
+  progressText.textContent=done+' / '+total;
+}
+
+function toggleStar(){
+  if(!filtered.length)return;
+  const w=filtered[currentIndex];
+  if(learned.has(w.word)){learned.delete(w.word);showToast('取消学会')}
+  else{learned.add(w.word);showToast('⭐ 学会啦！');showConfetti()}
+  saveState();updateStar();updateProgress();
+}
+
+function speakWord(){
+  if(!filtered.length||!window.speechSynthesis)return;
+  const w=filtered[currentIndex];
+  window.speechSynthesis.cancel();
+  // Say word twice: slowly then normal
+  const u=new SpeechSynthesisUtterance(w.word);
+  u.lang='en-US';u.rate=.7;u.pitch=1.1;
+  window.speechSynthesis.speak(u);
+}
+
+// Events
+card.addEventListener('click',()=>{
+  if(!filtered.length)return;
+  card.classList.toggle('flipped');
+  isFlipped=!isFlipped;
+});
+audioBtn.addEventListener('click',e=>{e.stopPropagation();speakWord()});
+starBtn.addEventListener('click',e=>{e.stopPropagation();toggleStar()});
+starBtnBack.addEventListener('click',e=>{e.stopPropagation();toggleStar()});
+document.getElementById('prevBtn').addEventListener('click',()=>{
+  if(!filtered.length)return;
+  card.classList.remove('flipped');isFlipped=false;
+  currentIndex=(currentIndex-1+filtered.length)%filtered.length;
+  renderCard();
+});
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  if(!filtered.length)return;
+  card.classList.remove('flipped');isFlipped=false;
+  currentIndex=(currentIndex+1)%filtered.length;
+  renderCard();
+});
+document.getElementById('shuffleBtn').addEventListener('click',()=>{
+  if(filtered.length<2)return;
+  card.classList.remove('flipped');isFlipped=false;
+  let idx;
+  do{idx=Math.floor(Math.random()*filtered.length)}while(idx===currentIndex&&filtered.length>1);
+  currentIndex=idx;renderCard();showToast('🎲 随机一张');
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(learned.size===0){showToast('还没有学会的单词');return}
+  if(confirm('确定重置所有学习进度？')){learned.clear();saveState();renderCard();showToast('🔄 已重置')}
+});
+
+// Swipe
+let tx=0;
+card.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX},{passive:true});
+card.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].screenX-tx;
+  if(Math.abs(dx)>60){
+    card.classList.remove('flipped');isFlipped=false;
+    if(dx>0)document.getElementById('prevBtn').click();
+    else document.getElementById('nextBtn').click();
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft')document.getElementById('prevBtn').click();
+  else if(e.key==='ArrowRight')document.getElementById('nextBtn').click();
+  else if(e.key===' '){e.preventDefault();card.click()}
+  else if(e.key==='f')toggleStar();
+});
+
+function showConfetti(){
+  const c=document.getElementById('confetti-canvas');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const colors=['#10B981','#34D399','#F59E0B','#FBBF24','#8B5CF6','#EC4899','#3B82F6'];
+  const ps=[];
+  for(let i=0;i<60;i++)ps.push({x:Math.random()*c.width,y:-Math.random()*c.height,w:4+Math.random()*6,h:3+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],vy:2+Math.random()*3,vx:-1+Math.random()*2,rot:Math.random()*360,rv:-4+Math.random()*8,alpha:1});
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);let alive=false;
+    for(const p of ps){
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;p.alpha-=0.004;
+      if(p.alpha<=0)continue;alive=true;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    }
+    if(alive&&frame++<250)requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,c.width,c.height);c.width=0;c.height=0}
+  }
+  draw();
+}
+
+let toastTimer;
+function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1500)}
+
+loadState();
+buildCatTabs();
+renderCard();
+</script>
+</body>
+</html>

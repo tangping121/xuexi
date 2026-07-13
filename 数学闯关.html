@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🧮 数学闯关</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FFF7ED 0%,#FEF3C7 50%,#FFFBEB 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  user-select:none;
+}
+
+/* Header */
+.header{
+  width:100%;padding:16px 20px 6px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{
+  font-size:20px;font-weight:600;
+  background:linear-gradient(135deg,#F97316,#EC4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.header-right{display:flex;gap:10px;align-items:center}
+.header-right button{
+  background:none;border:none;font-size:20px;cursor:pointer;padding:4px;
+  transition:transform .2s;
+}
+.header-right button:active{transform:scale(.85)}
+
+/* Level & Score Bar */
+.info-row{
+  display:flex;align-items:center;justify-content:space-between;
+  width:calc(100% - 40px);padding:8px 0 4px;
+}
+.level-badge{
+  font-size:14px;font-weight:600;color:#92400E;
+  background:#FEF3C7;padding:4px 14px;border-radius:99px;
+}
+.stars-row{display:flex;gap:3px;font-size:18px}
+.stars-row .star-off{opacity:.25;filter:grayscale(1)}
+.question-counter{font-size:12px;color:#D97706;font-weight:500}
+
+/* Progress */
+.progress-wrap{width:calc(100% - 40px);margin:2px 0}
+.progress-bar{height:8px;background:#FDE68A;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#F97316,#EC4899);transition:width .35s ease}
+
+/* Visual Counter (dots representing the numbers) */
+.counter-area{
+  width:100%;padding:4px 20px 0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:40px;flex-wrap:wrap;
+}
+.dot-row{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+}
+.dot{
+  width:18px;height:18px;border-radius:50%;
+  animation:dotPop .3s ease both;
+}
+.dot.op{width:24px;height:24px;background:transparent;
+  font-size:20px;font-weight:700;color:#F97316;display:flex;align-items:center;justify-content:center;
+}
+@keyframes dotPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* Question */
+.question-area{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:8px 16px;
+}
+.question-box{
+  background:#fff;border-radius:28px;padding:24px 32px;
+  box-shadow:0 8px 32px rgba(249,115,22,.1);border:2px solid rgba(251,191,36,.2);
+  width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;
+}
+.question-text{
+  font-size:56px;font-weight:700;color:#1A1A2E;
+  letter-spacing:4px;margin-bottom:20px;
+}
+.equals{color:#F97316}
+
+/* Answer Buttons */
+.answers{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;
+}
+.answer-btn{
+  padding:16px;border-radius:18px;border:2px solid #FDE68A;
+  font-size:32px;font-weight:600;cursor:pointer;
+  background:#FFFBEB;color:#92400E;
+  transition:all .15s;
+}
+.answer-btn:active{transform:scale(.92)}
+.answer-btn.correct{
+  background:#D1FAE5;border-color:#34D399;color:#065F46;
+  animation:pop .3s ease;
+}
+.answer-btn.wrong{
+  background:#FEE2E2;border-color:#F87171;color:#991B1B;
+  animation:shake .4s ease;
+}
+.answer-btn.reveal{
+  background:#D1FAE5;border-color:#34D399;color:#065F46;
+}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}
+}
+.answer-btn.disabled{pointer-events:none;opacity:.6}
+
+/* Feedback */
+.feedback{
+  margin-top:14px;font-size:22px;font-weight:600;
+  min-height:36px;transition:opacity .2s;
+}
+
+/* Level Complete */
+.level-complete{
+  display:none;flex-direction:column;align-items:center;gap:8px;
+  text-align:center;
+}
+.level-complete.show{display:flex}
+.level-complete .trophy{font-size:80px}
+.level-complete .score{font-size:22px;font-weight:600;color:#1A1A2E}
+.level-complete .msg{font-size:15px;color:#6B7280}
+.level-complete .btn-next{
+  margin-top:10px;padding:14px 36px;border-radius:99px;border:none;
+  font-size:18px;font-weight:600;cursor:pointer;
+  background:linear-gradient(135deg,#F97316,#EC4899);color:#fff;
+  box-shadow:0 4px 16px rgba(236,72,153,.3);
+  transition:transform .15s;
+}
+.level-complete .btn-next:active{transform:scale(.92)}
+
+/* Overlay celebration */
+#confetti-canvas{position:fixed;inset:0;z-index:300;pointer-events:none}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:10px 24px;
+  border-radius:99px;font-size:14px;z-index:200;
+  opacity:0;transition:opacity .4s ease;
+  pointer-events:none;
+}
+.toast.show{opacity:1}
+
+@media(max-width:380px){
+  .question-text{font-size:44px}
+  .answer-btn{font-size:26px;padding:12px}
+  .dot{width:14px;height:14px}
+  .dot.op{width:20px;height:20px;font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧮 数学闯关</h1>
+  <div class="header-right">
+    <button id="resetBtn" title="重置所有等级">🔄</button>
+  </div>
+</div>
+
+<div class="info-row">
+  <span class="level-badge" id="levelDisplay">第 1 关</span>
+  <span class="stars-row" id="starsRow"></span>
+  <span class="question-counter" id="qCounter">第 1 题</span>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</div>
+
+<div class="counter-area">
+  <div class="dot-row" id="dotRow"></div>
+</div>
+
+<div class="question-area">
+  <div class="question-box" id="questionBox">
+    <div class="question-text" id="questionText">3 + 2 = <span class="equals">?</span></div>
+    <div class="answers" id="answersGrid"></div>
+    <div class="feedback" id="feedback"></div>
+
+    <div class="level-complete" id="levelComplete">
+      <div class="trophy" id="trophyIcon">🏆</div>
+      <div class="score" id="scoreText">全部答对！🎉</div>
+      <div class="msg" id="levelMsg">太棒了！准备下一关吧</div>
+      <button class="btn-next" id="nextLevelBtn">下一关 ➜</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Level Config
+// ═══════════════════════════════════════════
+const LEVELS = [
+  {name:'小试牛刀',desc:'+1 +2',    gen:()=>genAdd(1,2,1,5)},
+  {name:'渐入佳境',desc:'+3 +4 +5', gen:()=>genAdd(3,5,1,7)},
+  {name:'加减混合',desc:'混合1-5',  gen:()=>genMix(1,5)},
+  {name:'勇往直前',desc:'+6~+9',    gen:()=>genAdd(6,9,1,10)},
+  {name:'减法高手',desc:'-1~-5',    gen:()=>genSub(1,5,5,10)},
+  {name:'毕业大关',desc:'加减混10', gen:()=>genMix(1,10)},
+];
+
+function genAdd(minAdd,maxAdd,minNum,maxNum){
+  const probs=[];
+  for(let i=0;i<10;i++){
+    const a=randInt(minNum,maxNum);
+    const b=randInt(minAdd,Math.min(maxAdd,maxNum-a));
+    const ans=a+b;
+    probs.push({a,b,op:'+',ans});
+  }
+  return probs;
+}
+function genSub(minSub,maxSub,minNum,maxNum){
+  const probs=[];
+  for(let i=0;i<10;i++){
+    const ans=randInt(minNum,maxNum-minSub);
+    const b=randInt(minSub,Math.min(maxSub,maxNum-ans));
+    const a=ans+b;
+    probs.push({a,b,op:'-',ans:a-b});
+  }
+  return probs;
+}
+function genMix(min,max){
+  const probs=[];
+  for(let i=0;i<10;i++){
+    if(Math.random()<.5){
+      const a=randInt(min,Math.min(max-1,8));
+      const b=randInt(1,Math.min(5,max-a));
+      probs.push({a,b,op:'+',ans:a+b});
+    }else{
+      const ans=randInt(Math.max(min,2),Math.min(max-1,8));
+      const b=randInt(1,Math.min(5,ans-1));
+      const a=ans+b;
+      probs.push({a,b,op:'-',ans});
+    }
+  }
+  return probs;
+}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+let currentLevel=0;
+let questions=[];
+let qIndex=0;
+let stars=[]; // per-level stars: array of arrays
+let answered=false;
+let totalCorrect=0;
+const STARS_KEY='math_stars';
+const LEVEL_KEY='math_level';
+
+// DOM
+const questionText=document.getElementById('questionText');
+const answersGrid=document.getElementById('answersGrid');
+const feedback=document.getElementById('feedback');
+const levelDisplay=document.getElementById('levelDisplay');
+const starsRow=document.getElementById('starsRow');
+const qCounter=document.getElementById('qCounter');
+const progressFill=document.getElementById('progressFill');
+const dotRow=document.getElementById('dotRow');
+const levelComplete=document.getElementById('levelComplete');
+const trophyIcon=document.getElementById('trophyIcon');
+const scoreText=document.getElementById('scoreText');
+const levelMsg=document.getElementById('levelMsg');
+const nextLevelBtn=document.getElementById('nextLevelBtn');
+const toast=document.getElementById('toast');
+
+function loadState(){
+  try{
+    const s=localStorage.getItem(STARS_KEY);
+    stars=s?JSON.parse(s):LEVELS.map(()=>[]);
+    const l=localStorage.getItem(LEVEL_KEY);
+    currentLevel=l?parseInt(l):0;
+    if(currentLevel>=LEVELS.length)currentLevel=LEVELS.length-1;
+  }catch(e){stars=LEVELS.map(()=>[]);currentLevel=0}
+}
+function saveState(){
+  localStorage.setItem(STARS_KEY,JSON.stringify(stars));
+  localStorage.setItem(LEVEL_KEY,String(currentLevel));
+}
+
+function restartLevel(){
+  questions=LEVELS[currentLevel].gen();
+  qIndex=0;
+  totalCorrect=0;
+  answered=false;
+  levelComplete.classList.remove('show');
+  document.getElementById('questionBox').querySelector('.answers, .feedback, .question-text').style.display='';
+  document.getElementById('questionBox').querySelector('.level-complete').style.display='';
+  showQuestion();
+}
+
+function showQuestion(){
+  if(qIndex>=questions.length){
+    showLevelComplete();
+    return;
+  }
+  answered=false;
+  const q=questions[qIndex];
+  questionText.innerHTML = `${q.a} ${q.op} ${q.b} = <span class="equals">?</span>`;
+  feedback.textContent='';
+
+  // Build answer choices
+  let choices=[q.ans];
+  while(choices.length<4){
+    const d=randInt(1,Math.max(3,Math.min(10,q.ans+3)));
+    const alt=Math.random()<.5?q.ans+d:q.ans-d;
+    if(alt>=0&&!choices.includes(alt))choices.push(alt);
+  }
+  shuffleArr(choices);
+
+  answersGrid.innerHTML=choices.map(v=>`<div class="answer-btn" data-val="${v}">${v}</div>`).join('');
+  answersGrid.querySelectorAll('.answer-btn').forEach(el=>{
+    el.addEventListener('click',()=>checkAnswer(el,parseInt(el.dataset.val)),{once:true});
+  });
+
+  // Dot visualization
+  renderDots(q);
+
+  // Update progress
+  qCounter.textContent=`第 ${qIndex+1} 题`;
+  progressFill.style.width=`${(qIndex/questions.length)*100}%`;
+
+  // Update stars display
+  renderStars();
+}
+
+function renderDots(q){
+  const n=q.op==='+'?q.a+q.b:q.a;
+  let dots='';
+  for(let i=0;i<q.a;i++)dots+=`<span class="dot" style="background:#F97316;animation-delay:${i*0.05}s"></span>`;
+  if(q.op==='+'){
+    dots+=`<span class="dot op">+</span>`;
+    for(let i=0;i<q.b;i++)dots+=`<span class="dot" style="background:#EC4899;animation-delay:${(q.a+i)*0.05}s"></span>`;
+    dots+=`<span class="dot op">=</span>`;
+    for(let i=0;i<n;i++)dots+=`<span class="dot" style="background:#8B5CF6;animation-delay:${(q.a+q.b+i)*0.05}s"></span>`;
+  }else{
+    dots+=`<span class="dot op">-</span>`;
+    for(let i=0;i<q.b;i++)dots+=`<span class="dot" style="background:#A7A7A7;opacity:0.4;animation-delay:${(q.a+i)*0.05}s"></span>`;
+    dots+=`<span class="dot op">=</span>`;
+    for(let i=0;i<q.ans;i++)dots+=`<span class="dot" style="background:#8B5CF6;animation-delay:${(q.a+q.b+i)*0.05}s"></span>`;
+  }
+  dotRow.innerHTML=dots;
+}
+
+function checkAnswer(el,val){
+  if(answered)return;
+  answered=true;
+  const q=questions[qIndex];
+  const correct=val===q.ans;
+
+  // Disable all buttons
+  answersGrid.querySelectorAll('.answer-btn').forEach(b=>b.classList.add('disabled'));
+
+  if(correct){
+    el.classList.add('correct');
+    feedback.textContent='🎉 太棒啦！';
+    feedback.style.color='#059669';
+    totalCorrect++;
+  }else{
+    el.classList.add('wrong');
+    feedback.textContent=`❌ 答案是 ${q.ans} 哦～`;
+    feedback.style.color='#DC2626';
+    // Reveal the correct answer
+    answersGrid.querySelectorAll('.answer-btn').forEach(b=>{
+      if(parseInt(b.dataset.val)===q.ans)b.classList.add('reveal');
+    });
+  }
+
+  // Auto-advance
+  setTimeout(()=>{
+    qIndex++;
+    showQuestion();
+  },correct?1000:1800);
+}
+
+function showLevelComplete(){
+  const total=questions.length;
+  const pct=Math.round(totalCorrect/total*100);
+  const starCount= pct>=90?3:pct>=70?2:pct>=50?1:0;
+
+  // Store stars for this level
+  stars[currentLevel]=starCount;
+  saveState();
+
+  // Hide question elements, show complete
+  document.querySelector('.question-text').style.display='none';
+  document.querySelector('.answers').style.display='none';
+  document.querySelector('.feedback').style.display='none';
+  dotRow.innerHTML='';
+  levelComplete.classList.add('show');
+  progressFill.style.width='100%';
+
+  if(pct>=90){
+    trophyIcon.textContent='🏆';scoreText.textContent='全部答对！太厉害了！🎉';
+    levelMsg.textContent='你已经是数学小天才了！';
+    showConfetti(100);
+  }else if(pct>=70){
+    trophyIcon.textContent='🥈';scoreText.textContent='答对 '+totalCorrect+' 题，很棒！';
+    levelMsg.textContent='再练练就能拿满星啦～';
+    showConfetti(50);
+  }else if(pct>=50){
+    trophyIcon.textContent='🥉';scoreText.textContent='答对 '+totalCorrect+' 题，继续加油！';
+    levelMsg.textContent='多练几次就会越来越棒～';
+  }else{
+    trophyIcon.textContent='💪';scoreText.textContent='答对 '+totalCorrect+' 题';
+    levelMsg.textContent='没关系，我们再练一次！';
+  }
+
+  if(currentLevel<LEVELS.length-1&&starCount>=1){
+    nextLevelBtn.textContent='下一关 ➜';
+  }else{
+    nextLevelBtn.textContent='再练一次 🔄';
+  }
+  renderStars();
+}
+
+function renderStars(){
+  const totalStars=stars[currentLevel]||0;
+  let html='';
+  for(let i=0;i<3;i++)html+=`<span class="${i<totalStars?'':'star-off'}">⭐</span>`;
+  starsRow.innerHTML=html;
+  levelDisplay.textContent=`${LEVELS[currentLevel].name}`;
+}
+
+function nextLevel(){
+  if(currentLevel<LEVELS.length-1&&(stars[currentLevel]||0)>=1){
+    currentLevel++;
+    saveState();
+  }
+  levelComplete.classList.remove('show');
+  document.querySelector('.question-text').style.display='';
+  document.querySelector('.answers').style.display='';
+  document.querySelector('.feedback').style.display='';
+  restartLevel();
+}
+
+function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+// Events
+nextLevelBtn.addEventListener('click',nextLevel);
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('确定重置所有等级和星星吗？')){
+    stars=LEVELS.map(()=>[]);
+    currentLevel=0;
+    saveState();
+    restartLevel();
+    renderStars();
+    showToast('🔄 全部重置');
+  }
+});
+
+// Confetti
+function showConfetti(n){
+  const c=document.getElementById('confetti-canvas');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const colors=['#F97316','#EC4899','#FBBF24','#34D399','#8B5CF6','#3B82F6'];
+  const ps=[];
+  const cnt=n||60;
+  for(let i=0;i<cnt;i++)ps.push({x:Math.random()*c.width,y:-Math.random()*c.height,w:4+Math.random()*6,h:3+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],vy:2+Math.random()*3,vx:-1+Math.random()*2,rot:Math.random()*360,rv:-4+Math.random()*8,alpha:1});
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);let alive=false;
+    for(const p of ps){
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;p.alpha-=0.004;
+      if(p.alpha<=0)continue;alive=true;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    }
+    if(alive&&frame++<250)requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,c.width,c.height);c.width=0;c.height=0}
+  }
+  draw();
+}
+
+let toastTimer;
+function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1500)}
+
+// Init
+loadState();
+restartLevel();
+</script>
+</body>
+</html>
