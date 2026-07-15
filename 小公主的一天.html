@@ -243,6 +243,8 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 
 loadState();
 renderStep();
+// AudioSys
+const AudioSys={star:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)();[880,1100,1320].forEach(function(f,i){setTimeout(function(){var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(f,c.currentTime);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o.start();o.stop(c.currentTime+.15)},i*80)})}catch(e){}}};
 </script>
 </body>
 </html>

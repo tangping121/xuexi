@@ -196,6 +196,7 @@ function renderQuestion(){
       const isCorrect = el.dataset.correct === 'true';
       if(isCorrect){
         el.classList.add('correct');
+        try{AudioSys.correct()}catch(e){}
         score++;
         document.getElementById('feedback').textContent = `🎉 答对了！${q.answer}！`;
         document.getElementById('feedback').style.color = '#059669';
@@ -211,6 +212,7 @@ function renderQuestion(){
         }
       } else {
         el.classList.add('wrong');
+        try{AudioSys.wrong()}catch(e){}
         grid.querySelectorAll('.emotion-btn').forEach(b => {
           if(b.dataset.correct === 'true') b.classList.add('reveal');
         });
@@ -274,6 +276,8 @@ let toastTimer;
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
 
 startGame();
+// AudioSys
+const AudioSys={correct:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)();[523,659,784].forEach(function(f,i){setTimeout(function(){var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(f,c.currentTime);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.2);o.start();o.stop(c.currentTime+.2)},i*90)})}catch(e){}},wrong:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='square';o.frequency.setValueAtTime(300,c.currentTime);g.gain.setValueAtTime(.1,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.4);o.start();o.stop(c.currentTime+.4)}catch(e){}}};
 </script>
 </body>
 </html>
