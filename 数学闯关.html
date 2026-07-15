@@ -368,10 +368,12 @@ function checkAnswer(el,val){
     feedback.textContent='🎉 太棒啦！';
     feedback.style.color='#059669';
     totalCorrect++;
+    try{AudioSys.correct()}catch(e){}
   }else{
     el.classList.add('wrong');
     feedback.textContent=`❌ 答案是 ${q.ans} 哦～`;
     feedback.style.color='#DC2626';
+    try{AudioSys.wrong()}catch(e){}
     // Reveal the correct answer
     answersGrid.querySelectorAll('.answer-btn').forEach(b=>{
       if(parseInt(b.dataset.val)===q.ans)b.classList.add('reveal');
@@ -493,6 +495,8 @@ function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeo
 // Init
 loadState();
 restartLevel();
+// AudioSys
+const AudioSys = {correct:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(523,c.currentTime);g.gain.setValueAtTime(.25,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.3);o.start();o.stop(c.currentTime+.3);setTimeout(function(){var o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(c.destination);o2.type='sine';o2.frequency.setValueAtTime(784,c.currentTime);g2.gain.setValueAtTime(.25,c.currentTime);g2.gain.exponentialRampToValueAtTime(.001,c.currentTime+.3);o2.start();o2.stop(c.currentTime+.3)},120)}catch(e){}},wrong:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='square';o.frequency.setValueAtTime(300,c.currentTime);g.gain.setValueAtTime(.1,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.4);o.start();o.stop(c.currentTime+.4)}catch(e){}},star:function(){try{var c=new(window.AudioContext||window.webkitAudioContext)();[880,1100,1320].forEach(function(f,i){setTimeout(function(){var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(f,c.currentTime);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o.start();o.stop(c.currentTime+.15)},i*80)})}catch(e){}}};
 </script>
 </body>
 </html>
