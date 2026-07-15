@@ -8,78 +8,139 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   font-family:-apple-system,'PingFang SC',sans-serif;
-  background:linear-gradient(160deg,#FDF2F8 0%,#F3E8FF 30%,#EEF2FF 60%,#FEF3C7 100%);
-  min-height:100vh;min-height:100dvh;padding:20px 16px 40px;
+  min-height:100vh;min-height:100dvh;padding:16px 16px 40px;
+  overflow-x:hidden;
 }
-.header{text-align:center;padding:20px 0 8px}
+.bg-anim{
+  position:fixed;inset:0;z-index:-1;overflow:hidden;
+  background:linear-gradient(160deg,#FDF2F8 0%,#F3E8FF 25%,#EEF2FF 50%,#FEF3C7 75%,#FFF7ED 100%);
+}
+.bubble{
+  position:absolute;border-radius:50%;opacity:.15;
+  animation:float linear infinite;pointer-events:none;
+}
+@keyframes float{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:.15}90%{opacity:.15}100%{transform:translateY(-100px) rotate(720deg);opacity:0}}
+.header{text-align:center;padding:16px 0 6px;position:relative;z-index:1}
 .header h1{
-  font-size:28px;font-weight:700;
-  background:linear-gradient(135deg,#E83E8C,#7C3AED,#F59E0B);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-size:30px;font-weight:700;
+  background:linear-gradient(135deg,#E83E8C,#7C3AED,#F59E0B,#34D399);
+  background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:gradientShift 4s ease infinite;
 }
-.header p{font-size:14px;color:#7C3AED;margin-top:4px;opacity:.7}
-.subtitle{text-align:center;font-size:13px;color:#6B7280;margin-bottom:16px}
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.header .sub{
+  font-size:14px;color:#7C3AED;margin-top:2px;opacity:.7;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.header .sub .wave{display:inline-block;animation:waveAnim 1.5s ease infinite}
+@keyframes waveAnim{0%,100%{transform:rotate(0deg)}50%{transform:rotate(15deg)}}
+.header .count-badge{
+  display:inline-block;background:rgba(124,58,237,.1);padding:2px 12px;border-radius:99px;
+  font-size:12px;color:#7C3AED;margin-top:4px;
+}
 
-.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;margin:0 auto}
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:10px auto 0;position:relative;z-index:1}
 .app-card{
-  background:#fff;border-radius:20px;padding:16px 12px;text-decoration:none;
-  box-shadow:0 4px 16px rgba(124,58,237,.08);border:1.5px solid rgba(124,58,237,.08);
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  transition:transform .15s,box-shadow .15s;
+  background:#fff;border-radius:18px;padding:14px 10px;text-decoration:none;
+  box-shadow:0 4px 16px rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.06);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;
+  animation:cardAppear .5s ease both;
 }
-.app-card:active{transform:scale(.95);box-shadow:0 2px 8px rgba(124,58,237,.12)}
-.app-card .icon{font-size:40px;line-height:1}
-.app-card .name{font-size:15px;font-weight:600;color:#1A1A2E}
-.app-card .desc{font-size:11px;color:#6B7280;text-align:center;line-height:1.4}
+.app-card:nth-child(1){animation-delay:.05s}
+.app-card:nth-child(2){animation-delay:.1s}
+.app-card:nth-child(3){animation-delay:.15s}
+.app-card:nth-child(4){animation-delay:.2s}
+.app-card:nth-child(5){animation-delay:.25s}
+.app-card:nth-child(6){animation-delay:.3s}
+.app-card:nth-child(7){animation-delay:.35s}
+.app-card:nth-child(8){animation-delay:.4s}
+@keyframes cardAppear{0%{transform:translateY(20px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.app-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(124,58,237,.12)}
+.app-card:active{transform:scale(.94)}
+.app-card .icon{font-size:36px;line-height:1;transition:transform .3s}
+.app-card:hover .icon{transform:scale(1.15) rotate(-5deg)}
+.app-card .name{font-size:14px;font-weight:600;color:#1A1A2E;margin-top:2px}
+.app-card .desc{font-size:10px;color:#6B7280;text-align:center;line-height:1.3}
 .tag{
-  font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;
+  font-size:9px;padding:1px 8px;border-radius:99px;font-weight:500;margin-top:2px;
 }
 .tag.done{background:#D1FAE5;color:#065F46}
-.tag.new{background:#FEF3C7;color:#92400E;animation:pulse 2s ease infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.tag.new{background:#FEF3C7;color:#92400E;animation:tagPulse 2s ease infinite}
+@keyframes tagPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.tag.hot{background:#FCE7F3;color:#BE185D;animation:tagPulse 1.5s ease infinite}
+.shine{
+  position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(circle,transparent 30%,rgba(255,255,255,.3) 60%,transparent 70%);
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.app-card:hover .shine{opacity:1}
 
-.footer{text-align:center;margin-top:20px;font-size:12px;color:#9CA3AF}
+.footer{text-align:center;margin-top:20px;font-size:17px;color:#9CA3AF;position:relative;z-index:1;animation:heartBeat 2s ease infinite}
+@keyframes heartBeat{0%,100%{transform:scale(1)}5%{transform:scale(1.05)}10%{transform:scale(1)}15%{transform:scale(1.05)}20%{transform:scale(1)}}
 </style>
 </head>
 <body>
+<div class="bg-anim" id="bgAnim"></div>
+
 <div class="header">
   <h1>🌸 学习乐园</h1>
-  <p>5岁幼小衔接 · 语数外全科启蒙</p>
+  <div class="sub"><span class="wave">👋</span> 给爸爸的小公主 · 幼小衔接全科启蒙</div>
+  <div class="count-badge">🎯 8 款学习 App · 持续更新中 ✨</div>
 </div>
-<p class="subtitle">✨ 点击图标开始学习</p>
 
 <div class="app-grid">
   <a class="app-card" href="识字闪卡.html">
+    <div class="shine"></div>
     <div class="icon">📘</div>
     <div class="name">识字闪卡</div>
     <div class="desc">80个汉字 · 拼音词组 · 语音朗读</div>
     <span class="tag done">已上线</span>
   </a>
+  <a class="app-card" href="拼音大冒险.html">
+    <div class="shine"></div>
+    <div class="icon">🔤</div>
+    <div class="name">拼音大冒险</div>
+    <div class="desc">声母韵母 · 听音闯关 · 四声练习</div>
+    <span class="tag hot">🔥热门</span>
+  </a>
   <a class="app-card" href="古诗启蒙.html">
+    <div class="shine"></div>
     <div class="icon">📜</div>
     <div class="name">古诗启蒙</div>
     <div class="desc">10首古诗 · 逐句拼音 · 填空模式</div>
     <span class="tag new">新</span>
   </a>
   <a class="app-card" href="数学闯关.html">
+    <div class="shine"></div>
     <div class="icon">🧮</div>
     <div class="name">数学闯关</div>
     <div class="desc">加减法 · 6关闯关 · 圆点可视化</div>
     <span class="tag done">已上线</span>
   </a>
   <a class="app-card" href="英语闪卡.html">
+    <div class="shine"></div>
     <div class="icon">🌐</div>
     <div class="name">英语闪卡</div>
     <div class="desc">40单词 · emoji · 美式发音</div>
     <span class="tag done">已上线</span>
   </a>
   <a class="app-card" href="涂鸦画板.html">
+    <div class="shine"></div>
     <div class="icon">🎨</div>
     <div class="name">涂鸦画板</div>
     <div class="desc">自由画画 · 贴纸 · 保存到相册</div>
     <span class="tag new">新</span>
   </a>
+  <a class="app-card" href="小钢琴.html">
+    <div class="shine"></div>
+    <div class="icon">🎹</div>
+    <div class="name">小钢琴</div>
+    <div class="desc">彩色琴键 · 儿歌演奏 · 录音回放</div>
+    <span class="tag hot">🔥热门</span>
+  </a>
   <a class="app-card" href="记忆配对.html">
+    <div class="shine"></div>
     <div class="icon">🧩</div>
     <div class="name">记忆配对</div>
     <div class="desc">翻牌记忆 · 4种主题 · 3种难度</div>
@@ -87,8 +148,27 @@ body{
   </a>
 </div>
 
-<div class="footer">
-  💖 爸爸给女儿做的学习小乐园
-</div>
+<div class="footer">💖 爸爸给女儿做的学习小乐园</div>
+
+<script>
+// Floating bubbles
+(function(){
+  const c=document.getElementById('bgAnim');
+  const emojis=['🌸','⭐','🦋','🌈','❤️','🌻','🍭','🎀'];
+  for(let i=0;i<20;i++){
+    const b=document.createElement('div');
+    b.className='bubble';
+    const size=20+Math.random()*40;
+    b.style.width=size+'px';b.style.height=size+'px';
+    b.style.left=Math.random()*100+'%';
+    b.style.background=emojis[Math.floor(Math.random()*emojis.length)];
+    b.style.fontSize=(size*.6)+'px';
+    b.style.display='flex';b.style.alignItems='center';b.style.justifyContent='center';
+    b.style.animationDuration=(12+Math.random()*18)+'s';
+    b.style.animationDelay=(Math.random()*15)+'s';
+    c.appendChild(b);
+  }
+})();
+</script>
 </body>
 </html>

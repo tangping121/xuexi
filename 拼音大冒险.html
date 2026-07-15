@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🔤 拼音大冒险</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FFF7ED 0%,#FEF3C7 40%,#FDE68A 100%);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;user-select:none;
+}
+.header{
+  padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700;color:#92400E}
+.header-right{display:flex;gap:8px}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;
+}
+.header-right button:active{transform:scale(.82)}
+
+/* Stars */
+.stars-row{text-align:center;font-size:20px;padding:2px 0;min-height:30px}
+.star-pop{animation:starBounce .5s ease}
+@keyframes starBounce{0%{transform:scale(1)}30%{transform:scale(1.5)}60%{transform:scale(.9)}100%{transform:scale(1)}}
+
+/* Mode toggle */
+.mode-bar{display:flex;gap:8px;justify-content:center;padding:2px 0 4px}
+.mode-btn{
+  padding:6px 20px;border-radius:99px;border:2px solid #FDE68A;font-size:13px;font-weight:600;
+  cursor:pointer;background:#fff;color:#92400E;transition:all .15s;
+}
+.mode-btn:active{transform:scale(.92)}
+.mode-btn.active{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-color:#D97706;box-shadow:0 2px 8px rgba(217,119,6,.25)}
+
+/* Category tabs */
+.cat-bar{display:flex;gap:6px;padding:4px 14px;overflow-x:auto;scrollbar-width:none}
+.cat-bar::-webkit-scrollbar{display:none}
+.cat-btn{
+  padding:5px 14px;border-radius:99px;border:2px solid #FDE68A;
+  font-size:12px;cursor:pointer;white-space:nowrap;background:#fff;color:#92400E;
+  transition:all .15s;flex-shrink:0;font-weight:500;
+}
+.cat-btn:active{transform:scale(.92)}
+.cat-btn.active{background:#F59E0B;color:#fff;border-color:#D97706}
+
+/* Content */
+.content{
+  flex:1;padding:6px 12px 4px;overflow-y:auto;
+}
+.pinyin-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;padding:2px 0 8px;
+}
+.pinyin-card{
+  background:#fff;border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;
+  border:2px solid #FEF3C7;box-shadow:0 2px 8px rgba(217,119,6,.06);
+  transition:transform .15s,box-shadow .15s;
+  position:relative;overflow:hidden;
+}
+.pinyin-card:active{transform:scale(.9);box-shadow:0 2px 12px rgba(217,119,6,.15)}
+.pinyin-card .py{font-size:22px;font-weight:700;color:#1A1A2E}
+.pinyin-card .eg{font-size:10px;color:#D97706;margin-top:2px}
+.pinyin-card .sound-icon{font-size:12px;opacity:.4;margin-top:2px}
+.pinyin-card.playing{animation:pyPop .5s ease;border-color:#F59E0B;box-shadow:0 0 20px rgba(245,158,11,.3)}
+@keyframes pyPop{0%{transform:scale(1)}30%{transform:scale(1.12)}100%{transform:scale(1)}}
+.pinyin-card.learned{background:#D1FAE5;border-color:#34D399}
+.pinyin-card.learned::after{content:'⭐';position:absolute;top:2px;right:4px;font-size:11px}
+
+/* Quiz area */
+.quiz-area{display:none;flex-direction:column;align-items:center;gap:10px;padding:10px 0}
+.quiz-area.show{display:flex}
+.quiz-prompt{
+  font-size:36px;font-weight:700;color:#1A1A2E;min-height:50px;
+  background:#fff;border-radius:20px;padding:14px 28px;
+  box-shadow:0 4px 16px rgba(217,119,6,.1);border:2px solid #FDE68A;
+  animation:promptBounce .4s ease;
+}
+@keyframes promptBounce{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.quiz-prompt .tone{color:#D97706;font-size:40px}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}
+.quiz-opt{
+  padding:14px;border-radius:16px;border:2.5px solid #FDE68A;font-size:22px;font-weight:600;
+  cursor:pointer;background:#fff;color:#92400E;text-align:center;
+  transition:all .15s;
+}
+.quiz-opt:active{transform:scale(.92)}
+.quiz-opt.correct{background:#D1FAE5;border-color:#34D399;color:#065F46;animation:optPop .35s ease}
+.quiz-opt.wrong{background:#FEE2E2;border-color:#F87171;color:#991B1B;animation:shake .4s ease}
+.quiz-opt.disabled{pointer-events:none;opacity:.5}
+.quiz-opt.reveal{background:#D1FAE5;border-color:#34D399;color:#065F46}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes optPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+.quiz-feedback{font-size:18px;font-weight:600;min-height:28px;text-align:center}
+.quiz-next-btn{
+  padding:8px 24px;border:none;border-radius:99px;font-size:14px;font-weight:600;
+  cursor:pointer;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;
+  box-shadow:0 4px 12px rgba(217,119,6,.25);transition:transform .15s;
+}
+.quiz-next-btn:active{transform:scale(.9)}
+
+/* Tone practice */
+.tone-row{display:flex;gap:8px;justify-content:center;padding:6px 0}
+.tone-btn{
+  width:48px;height:48px;border-radius:50%;border:2.5px solid #FDE68A;
+  font-size:24px;font-weight:700;cursor:pointer;background:#fff;color:#92400E;
+  transition:all .15s;
+}
+.tone-btn:active{transform:scale(.85)}
+.tone-btn.active{border-color:#D97706;background:#F59E0B;color:#fff}
+
+/* Progress */
+.progress{height:4px;background:#FDE68A;border-radius:2px;margin:2px 14px 0;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#F59E0B,#D97706);transition:width .4s ease;border-radius:2px}
+
+/* Confetti */
+#confetti-canvas{position:fixed;inset:0;z-index:300;pointer-events:none}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔤 拼音大冒险</h1>
+  <div class="header-right">
+    <button id="soundToggleBtn" title="开关音效">🔊</button>
+  </div>
+</div>
+<div class="stars-row" id="starsRow">⭐ 0</div>
+<div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="mode-bar">
+  <button class="mode-btn active" id="learnModeBtn">📖 学习</button>
+  <button class="mode-btn" id="quizModeBtn">🎯 闯关</button>
+</div>
+<div class="cat-bar" id="catBar"></div>
+
+<div class="content">
+  <div class="pinyin-grid" id="pyGrid"></div>
+  <div class="quiz-area" id="quizArea"></div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Pinyin Data
+// ═══════════════════════════════════════════
+const DATA = {
+  声母: [
+    {py:'b',eg:'爸爸'},{py:'p',eg:'婆婆'},{py:'m',eg:'妈妈'},{py:'f',eg:'飞机'},
+    {py:'d',eg:'大地'},{py:'t',eg:'太阳'},{py:'n',eg:'奶奶'},{py:'l',eg:'蓝天'},
+    {py:'g',eg:'哥哥'},{py:'k',eg:'看看'},{py:'h',eg:'花朵'},{py:'j',eg:'飞机'},
+    {py:'q',eg:'气球'},{py:'x',eg:'西瓜'},{py:'zh',eg:'竹子'},{py:'ch',eg:'吃饭'},
+    {py:'sh',eg:'石头'},{py:'r',eg:'太阳'},{py:'z',eg:'写字'},{py:'c',eg:'小草'},
+    {py:'s',eg:'四季'},{py:'y',eg:'月亮'},{py:'w',eg:'娃娃'},
+  ],
+  韵母: [
+    {py:'a',eg:'阿姨'},{py:'o',eg:'喔喔'},{py:'e',eg:'白鹅'},{py:'i',eg:'衣服'},
+    {py:'u',eg:'乌鸦'},{py:'ü',eg:'小鱼'},{py:'ai',eg:'爱心'},{py:'ei',eg:'杯子'},
+    {py:'ui',eg:'尾巴'},{py:'ao',eg:'书包'},{py:'ou',eg:'豆豆'},{py:'iu',eg:'皮球'},
+    {py:'ie',eg:'蝴蝶'},{py:'üe',eg:'月亮'},{py:'er',eg:'耳朵'},{py:'an',eg:'天安门'},
+    {py:'en',eg:'嗯嗯'},{py:'in',eg:'音乐'},{py:'un',eg:'春天'},{py:'ün',eg:'白云'},
+    {py:'ang',eg:'山羊'},{py:'eng',eg:'风筝'},{py:'ing',eg:'星星'},{py:'ong',eg:'闹钟'},
+  ],
+  整体认读:[
+    {py:'zhi',eg:'知道'},{py:'chi',eg:'吃饭'},{py:'shi',eg:'老师'},{py:'ri',eg:'日子'},
+    {py:'zi',eg:'自己'},{py:'ci',eg:'词语'},{py:'si',eg:'思考'},{py:'yi',eg:'衣服'},
+    {py:'wu',eg:'乌云'},{py:'yu',eg:'金鱼'},{py:'ye',eg:'树叶'},{py:'yue',eg:'月亮'},
+    {py:'yuan',eg:'花园'},{py:'yin',eg:'音乐'},{py:'yun',eg:'白云'},{py:'ying',eg:'老鹰'},
+  ],
+};
+const CATS = Object.keys(DATA);
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+let currentCat = CATS[0];
+let isQuiz = false;
+let learned = new Set();
+let stars = 0;
+let soundOn = true;
+const LEARNED_KEY = 'pinyin_learned';
+const STARS_KEY = 'pinyin_stars';
+
+// DOM
+const pyGrid = document.getElementById('pyGrid');
+const quizArea = document.getElementById('quizArea');
+const catBar = document.getElementById('catBar');
+const starsRow = document.getElementById('starsRow');
+const progressFill = document.getElementById('progressFill');
+
+function loadState(){
+  try{
+    const l=localStorage.getItem(LEARNED_KEY);if(l)learned=new Set(JSON.parse(l));
+    const s=localStorage.getItem(STARS_KEY);if(s)stars=parseInt(s)||0;
+  }catch(e){}
+  updateStars();
+}
+function saveState(){
+  localStorage.setItem(LEARNED_KEY,JSON.stringify([...learned]));
+  localStorage.setItem(STARS_KEY,String(stars));
+}
+function updateStars(){starsRow.textContent='⭐ '+stars;updateProgress()}
+
+function updateProgress(){
+  const items=DATA[currentCat]||[];
+  const done=[...items].filter(i=>learned.has(i.py)).length;
+  const total=items.length;
+  progressFill.style.width=total?`${Math.round(done/total*100)}%`:'0%';
+}
+
+// ── Speech ──
+function speakPinyin(py){
+  if(!soundOn)return;
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(py+' ');
+  u.lang='zh-CN';u.rate=.7;u.pitch=.9;
+  window.speechSynthesis.speak(u);
+}
+
+function speakWithTone(py,tone){
+  if(!soundOn)return;
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const numToMark={'1':'','2':'ˊ','3':'ˇ','4':'ˋ'};
+  const display=py+numToMark[tone]||'';
+  const u=new SpeechSynthesisUtterance(py+tone);
+  u.lang='zh-CN';u.rate=.6;u.pitch=1;
+  window.speechSynthesis.speak(u);
+}
+
+// ── Render ──
+function renderGrid(){
+  const items=DATA[currentCat]||[];
+  pyGrid.innerHTML=items.map(item=>{
+    const isLearned=learned.has(item.py);
+    return `<div class="pinyin-card${isLearned?' learned':''}" data-py="${item.py}">
+      <div class="py">${item.py}</div>
+      <div class="eg">${item.eg}</div>
+      <div class="sound-icon">🔊</div>
+    </div>`;
+  }).join('');
+
+  pyGrid.querySelectorAll('.pinyin-card').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const py=el.dataset.py;
+      el.classList.add('playing');
+      speakPinyin(py);
+      setTimeout(()=>el.classList.remove('playing'),600);
+      // Auto-learn on click
+      if(!learned.has(py)){
+        learned.add(py);
+        el.classList.add('learned');
+        // Create star indicator
+        const s=document.createElement('span');
+        s.textContent='⭐';s.style.cssText='position:absolute;top:2px;right:4px;font-size:11px;animation:starBounce .5s ease';
+        el.appendChild(s);
+        stars++;updateStars();saveState();
+        showToast('🌟 学会 '+py);
+      }
+    });
+  });
+  updateProgress();
+}
+
+// ── Quiz ──
+let quizAnswered=false;
+let quizCorrectAnswer='';
+let quizTone='';
+
+function startQuiz(){
+  quizArea.classList.add('show');
+  pyGrid.style.display='none';
+  nextQuiz();
+}
+
+function nextQuiz(){
+  quizAnswered=false;
+  // Pick random pinyin
+  const allItems=Object.values(DATA).flat();
+  const item=allItems[Math.floor(Math.random()*allItems.length)];
+  const tone=String(Math.floor(Math.random()*4)+1);
+  quizCorrectAnswer=item.py;
+  quizTone=tone;
+
+  // Build options
+  let opts=[item.py];
+  const pool=allItems.filter(i=>i.py!==item.py).map(i=>i.py);
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  while(opts.length<4&&pool.length){const c=pool.pop();if(!opts.includes(c))opts.push(c)}
+  for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]]}
+
+  quizArea.innerHTML=`
+    <div class="quiz-prompt" id="quizPrompt">🤔 听一听，是哪个？<span class="tone"></span></div>
+    <div class="tone-row">
+      ${[1,2,3,4].map(t=>`<button class="tone-btn ${t===parseInt(tone)?'active':''}" data-tone="${t}">${'¯ˊˇˋ'[t-1]}</button>`).join('')}
+    </div>
+    <div class="quiz-options">${opts.map(o=>`<div class="quiz-opt" data-py="${o}">${o}</div>`).join('')}</div>
+    <div class="quiz-feedback" id="quizFb"></div>
+    <button class="quiz-next-btn" id="quizNext">下一题</button>
+  `;
+
+  // Auto-play
+  setTimeout(()=>{
+    speakWithTone(item.py,tone);
+  },300);
+
+  // Answer click
+  quizArea.querySelectorAll('.quiz-opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(quizAnswered)return;
+      quizAnswered=true;
+      quizArea.querySelectorAll('.quiz-opt').forEach(b=>b.classList.add('disabled'));
+      const ans=el.dataset.py;
+      if(ans===quizCorrectAnswer){
+        el.classList.add('correct');
+        document.getElementById('quizFb').textContent='🎉 答对啦！太棒了！';
+        document.getElementById('quizFb').style.color='#059669';
+        stars+=2;updateStars();saveState();
+        showConfetti(30);
+        if(!learned.has(ans)){learned.add(ans);saveState();updateProgress()}
+        // Replay correct one
+        setTimeout(()=>speakWithTone(quizCorrectAnswer,quizTone),600);
+      }else{
+        el.classList.add('wrong');
+        quizArea.querySelectorAll('.quiz-opt').forEach(b=>{
+          if(b.dataset.py===quizCorrectAnswer)b.classList.add('reveal');
+        });
+        document.getElementById('quizFb').textContent='❌ 答案是 '+quizCorrectAnswer;
+        document.getElementById('quizFb').style.color='#DC2626';
+      }
+    });
+  });
+
+  // Tone buttons
+  quizArea.querySelectorAll('.tone-btn').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const t=el.dataset.tone;
+      speakWithTone(quizCorrectAnswer,t);
+    });
+  });
+
+  document.getElementById('quizNext').addEventListener('click',nextQuiz);
+}
+
+// ── UI Build ──
+function buildCats(){
+  catBar.innerHTML='';
+  CATS.forEach(k=>{
+    const btn=document.createElement('button');
+    btn.className='cat-btn'+(k===currentCat?' active':'');
+    btn.textContent=k;
+    btn.onclick=()=>{
+      currentCat=k;
+      catBar.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      if(isQuiz){quizArea.classList.remove('show');pyGrid.style.display='grid'}
+      renderGrid();
+    };
+    catBar.appendChild(btn);
+  });
+}
+
+// ── Events ──
+document.getElementById('learnModeBtn').addEventListener('click',()=>{
+  isQuiz=false;
+  document.getElementById('learnModeBtn').classList.add('active');
+  document.getElementById('quizModeBtn').classList.remove('active');
+  quizArea.classList.remove('show');
+  pyGrid.style.display='grid';
+  renderGrid();
+});
+document.getElementById('quizModeBtn').addEventListener('click',()=>{
+  isQuiz=true;
+  document.getElementById('quizModeBtn').classList.add('active');
+  document.getElementById('learnModeBtn').classList.remove('active');
+  startQuiz();
+});
+document.getElementById('soundToggleBtn').addEventListener('click',function(){
+  soundOn=!soundOn;
+  this.textContent=soundOn?'🔊':'🔇';
+  showToast(soundOn?'🔊 音效已开':'🔇 音效已关');
+});
+
+// ── Confetti ──
+function showConfetti(n){
+  const c=document.getElementById('confetti-canvas');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const colors=['#F59E0B','#D97706','#F97316','#34D399','#8B5CF6','#EC4899'];
+  const ps=[];
+  for(let i=0;i<(n||50);i++)ps.push({x:Math.random()*c.width,y:-Math.random()*c.height,w:4+Math.random()*6,h:3+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],vy:2+Math.random()*3,vx:-1+Math.random()*2,rot:Math.random()*360,rv:-4+Math.random()*8,alpha:1});
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);let alive=false;
+    for(const p of ps){p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;p.alpha-=0.004;if(p.alpha<=0)continue;alive=true;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore()}
+    if(alive&&frame++<200)requestAnimationFrame(draw);else{ctx.clearRect(0,0,c.width,c.height);c.width=0;c.height=0}
+  }
+  draw();
+}
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// Init
+loadState();
+buildCats();
+renderGrid();
+</script>
+</body>
+</html>

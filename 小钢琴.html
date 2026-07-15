@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎹 小钢琴</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FDF2F8 0%,#FFE4EC 40%,#F3E8FF 100%);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;user-select:none;overflow:hidden;
+}
+.header{
+  padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:22px;font-weight:700;color:#1A1A2E}
+.header-right{display:flex;gap:8px}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;
+}
+.header-right button:active{transform:scale(.82)}
+
+/* Song selector */
+.song-bar{display:flex;gap:6px;padding:2px 14px;overflow-x:auto;scrollbar-width:none}
+.song-bar::-webkit-scrollbar{display:none}
+.song-btn{
+  padding:5px 14px;border-radius:99px;border:2px solid #F9A8D4;font-size:12px;font-weight:500;
+  cursor:pointer;white-space:nowrap;background:#fff;color:#BE185D;transition:all .15s;flex-shrink:0;
+}
+.song-btn:active{transform:scale(.9)}
+.song-btn.active{background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;border-color:#BE185D}
+.song-btn.playing{animation:songPulse 1s ease infinite}
+@keyframes songPulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* Piano */
+.piano-wrap{
+  flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:4px 8px 16px;
+}
+.piano{
+  display:flex;justify-content:center;gap:4px;padding:0 4px;position:relative;
+}
+.key{
+  flex:1;max-width:72px;height:200px;border-radius:0 0 14px 14px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding-bottom:12px;font-size:11px;font-weight:600;color:rgba(0,0,0,.3);
+  transition:transform .08s;position:relative;z-index:1;
+  border:1px solid rgba(0,0,0,.06);
+}
+.key:active,.key.pressed{transform:scaleY(.94);box-shadow:none!important}
+.key c{font-size:24px}
+.key .note-label{font-size:10px;opacity:.5;margin-top:2px}
+
+/* Key colors */
+.key:nth-child(1){background:linear-gradient(180deg,#FFF5F7,#FF6B9B);box-shadow:0 4px 12px rgba(255,107,155,.2)}
+.key:nth-child(2){background:linear-gradient(180deg,#FFF7ED,#F97316);box-shadow:0 4px 12px rgba(249,115,22,.2)}
+.key:nth-child(3){background:linear-gradient(180deg,#FFFBEB,#FBBF24);box-shadow:0 4px 12px rgba(251,191,36,.2)}
+.key:nth-child(4){background:linear-gradient(180deg,#ECFDF5,#34D399);box-shadow:0 4px 12px rgba(52,211,153,.2)}
+.key:nth-child(5){background:linear-gradient(180deg,#F0FDF4,#22C55E);box-shadow:0 4px 12px rgba(34,197,94,.2)}
+.key:nth-child(6){background:linear-gradient(180deg,#EFF6FF,#3B82F6);box-shadow:0 4px 12px rgba(59,130,246,.2)}
+.key:nth-child(7){background:linear-gradient(180deg,#EEF2FF,#6366F1);box-shadow:0 4px 12px rgba(99,102,241,.2)}
+.key:nth-child(8){background:linear-gradient(180deg,#FAF5FF,#A855F7);box-shadow:0 4px 12px rgba(168,85,247,.2)}
+
+/* Info bar */
+.info-bar{
+  text-align:center;padding:8px 0 6px;font-size:14px;color:#BE185D;font-weight:500;
+  min-height:32px;transition:opacity .2s;
+}
+.info-bar .note{display:inline-block;animation:noteFly .5s ease}
+@keyframes noteFly{0%{transform:translateY(10px);opacity:0}100%{transform:translateY(0);opacity:1}}
+
+/* Record */
+.record-bar{
+  display:flex;justify-content:center;gap:10px;padding:2px 0 6px;
+}
+.record-btn{
+  padding:6px 18px;border-radius:99px;border:2px solid #F9A8D4;font-size:13px;font-weight:600;
+  cursor:pointer;background:#fff;color:#BE185D;transition:all .15s;
+}
+.record-btn:active{transform:scale(.9)}
+.record-btn.recording{background:#FEE2E2;border-color:#EF4444;color:#DC2626;animation:recPulse 1s ease infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.record-btn.playback{background:#D1FAE5;border-color:#34D399;color:#059669}
+
+/* Floating notes anim */
+.floating-notes{position:fixed;inset:0;pointer-events:none;z-index:100}
+.float-note{
+  position:absolute;font-size:24px;animation:floatUp 1.5s ease forwards;
+}
+@keyframes floatUp{0%{transform:translateY(0) scale(0);opacity:1}50%{opacity:.8}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎹 小钢琴</h1>
+  <div class="header-right">
+    <button id="infoBtn" title="玩法说明">ℹ️</button>
+  </div>
+</div>
+
+<div class="song-bar" id="songBar"></div>
+
+<div class="info-bar" id="infoBar">🎵 点琴键，弹出好听的音乐</div>
+
+<div class="piano-wrap">
+  <div class="piano" id="piano"></div>
+  <div class="record-bar">
+    <button class="record-btn" id="recordBtn">⏺️ 录音</button>
+    <button class="record-btn" id="playbackBtn">▶️ 播放</button>
+  </div>
+</div>
+
+<div class="floating-notes" id="floatNotes"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Piano Notes & Songs
+// ═══════════════════════════════════════════
+const NOTES = [
+  {note:'C4',name:'Do',freq:261.63,emoji:'🌸'},
+  {note:'D4',name:'Re',freq:293.66,emoji:'🌻'},
+  {note:'E4',name:'Mi',freq:329.63,emoji:'🦋'},
+  {note:'F4',name:'Fa',freq:349.23,emoji:'🌈'},
+  {note:'G4',name:'Sol',freq:392.00,emoji:'⭐'},
+  {note:'A4',name:'La',freq:440.00,emoji:'❤️'},
+  {note:'B4',name:'Si',freq:493.88,emoji:'🦄'},
+  {note:'C5',name:'Do',freq:523.25,emoji:'🌟'},
+];
+
+const SONGS = [
+  {
+    name:'🌟 小星星',notes:[0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1, 0,0,4,4,5,5,4, 3,3,2,2,1,1,0],
+    bpm:220,
+  },
+  {
+    name:'🐯 两只老虎',notes:[0,1,2,0, 0,1,2,0, 2,3,4, 2,3,4, 4,5,4,3,2,0, 4,5,4,3,2,0, 1,0,1, 1,0,1],
+    bpm:200,
+  },
+  {
+    name:'🎂 生日快乐',notes:[0,0,1,0,3,2, 0,0,1,0,4,3, 0,0,6,5,3,2,1, 5,5,4,3,2,1],
+    bpm:180,
+  },
+  {
+    name:'🐸 小毛驴',notes:[4,4,4,4, 3,3,3, 2,2,2,2, 1,1,1, 4,4,4,4, 3,3,3, 2,2,2,1, 1,1,1],
+    bpm:200,
+  },
+  {
+    name:'🌊 划小船',notes:[0,1,2,3, 3,2,1,0, 2,3,4,4, 4,5,6,6, 6,5,4,4, 4,3,2, 1,2,3,3,3, 2,2,1],
+    bpm:190,
+  },
+];
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+let audioCtx = null;
+let isRecording = false;
+let recordedNotes = [];
+let isPlaying = false;
+let playTimer = null;
+
+const piano = document.getElementById('piano');
+const infoBar = document.getElementById('infoBar');
+const recordBtn = document.getElementById('recordBtn');
+const playbackBtn = document.getElementById('playbackBtn');
+const floatNotes = document.getElementById('floatNotes');
+
+// ── Audio ──
+function getAudioCtx(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  return audioCtx;
+}
+
+function playNote(noteIdx){
+  if(noteIdx<0||noteIdx>=NOTES.length)return;
+  const n=NOTES[noteIdx];
+  try{
+    const ctx=getAudioCtx();
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='triangle';o.frequency.setValueAtTime(n.freq,ctx.currentTime);
+    g.gain.setValueAtTime(.4,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+.8);
+    o.start();o.stop(ctx.currentTime+.8);
+  }catch(e){}
+
+  // Visual feedback
+  const keys=piano.querySelectorAll('.key');
+  if(keys[noteIdx]){
+    keys[noteIdx].classList.add('pressed');
+    setTimeout(()=>keys[noteIdx].classList.remove('pressed'),150);
+  }
+
+  // Floating emoji
+  const fn=document.createElement('div');
+  fn.className='float-note';fn.textContent=n.emoji;
+  fn.style.left=(Math.random()*60+20)+'%';
+  fn.style.bottom='200px';
+  floatNotes.appendChild(fn);
+  setTimeout(()=>fn.remove(),1500);
+
+  // Info
+  infoBar.textContent=`🎵 ${n.name} (${n.note}) ${n.emoji}`;
+
+  // Record
+  if(isRecording)recordedNotes.push(noteIdx);
+}
+
+// ── Build Piano ──
+function buildPiano(){
+  piano.innerHTML=NOTES.map((n,i)=>`
+    <div class="key" data-idx="${i}">
+      <c>${n.emoji}</c>
+      <span class="note-label">${n.name}</span>
+    </div>
+  `).join('');
+
+  piano.querySelectorAll('.key').forEach(el=>{
+    const handler=()=>playNote(parseInt(el.dataset.idx));
+    el.addEventListener('mousedown',handler);
+    el.addEventListener('touchstart',e=>{e.preventDefault();handler()},{passive:false});
+  });
+}
+
+// ── Songs ──
+function buildSongs(){
+  const sb=document.getElementById('songBar');
+  SONGS.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    btn.className='song-btn';btn.textContent=s.name;
+    btn.onclick=()=>{
+      if(isPlaying){stopSong();songBar.querySelectorAll('.song-btn').forEach(b=>b.classList.remove('playing'))}
+      songBar.querySelectorAll('.song-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      playSong(i);
+    };
+    sb.appendChild(btn);
+  });
+  // Free play
+  const free=document.createElement('button');
+  free.className='song-btn';free.textContent='🎶 自由弹奏';
+  free.onclick=()=>{stopSong();songBar.querySelectorAll('.song-btn').forEach(b=>b.classList.remove('active','playing'));infoBar.textContent='🎶 自由弹奏，想弹什么弹什么！'};
+  sb.appendChild(free);
+}
+
+function playSong(idx){
+  if(idx<0||idx>=SONGS.length)return;
+  stopSong();
+  const song=SONGS[idx];
+  let i=0;
+  const noteBtns=document.getElementById('songBar').querySelectorAll('.song-btn');
+  noteBtns[idx].classList.add('playing');
+
+  function playNext(){
+    if(i>=song.notes.length||!song.notes[i]||song.notes[i]===-1){
+      i++;if(i<song.notes.length){playTimer=setTimeout(playNext,60000/song.bpm)}else{stopSong();noteBtns[idx].classList.remove('playing');showToast('🎵 播放完毕！')}
+      return;
+    }
+    playNote(song.notes[i]);
+    i++;
+    if(i<song.notes.length)playTimer=setTimeout(playNext,60000/song.bpm);
+    else{noteBtns[idx].classList.remove('playing');showToast('🎵 播放完毕！')}
+  }
+  playNext();
+}
+
+function stopSong(){
+  if(playTimer){clearTimeout(playTimer);playTimer=null}
+  isPlaying=false;
+  document.getElementById('songBar').querySelectorAll('.song-btn').forEach(b=>b.classList.remove('playing'));
+}
+
+// ── Record ──
+recordBtn.addEventListener('click',()=>{
+  if(isRecording){
+    isRecording=false;
+    recordBtn.classList.remove('recording');
+    recordBtn.textContent='⏺️ 录音';
+    showToast('⏹️ 录音结束，共 '+recordedNotes.length+' 个音符');
+  }else{
+    isRecording=true;
+    recordedNotes=[];
+    recordBtn.classList.add('recording');
+    recordBtn.textContent='⏹️ 停止';
+    showToast('⏺️ 开始录音，弹琴吧！');
+  }
+});
+
+playbackBtn.addEventListener('click',()=>{
+  if(!recordedNotes.length){showToast('还没有录音，先点录音再弹琴吧');return}
+  if(isPlaying){stopSong();playbackBtn.classList.remove('playback');playbackBtn.textContent='▶️ 播放';return}
+  playbackBtn.classList.add('playback');playbackBtn.textContent='⏹️ 停止';
+  let i=0;
+  function playNext(){
+    if(i>=recordedNotes.length){playbackBtn.classList.remove('playback');playbackBtn.textContent='▶️ 播放';showToast('▶️ 播放完毕');return}
+    playNote(recordedNotes[i]);i++;
+    playTimer=setTimeout(playNext,200);
+  }
+  playNext();
+});
+
+// ── Info ──
+document.getElementById('infoBtn').addEventListener('click',()=>{
+  alert('🎹 小钢琴\n\n• 点击彩色琴键弹奏\n• 选择歌曲自动演奏\n• ⏺️ 录音后可以回放\n• 🌸 每个键有可爱的表情符号');
+});
+
+// ── Toast ──
+let toastTimer;
+function showToast(m){const t=document.querySelector('.info-bar');t.textContent=m;t.style.animation='none';setTimeout(()=>t.style.animation='',10)}
+
+// Keyboard support
+document.addEventListener('keydown',e=>{
+  const map={'a':0,'s':1,'d':2,'f':3,'g':4,'h':5,'j':6,'k':7};
+  const idx=map[e.key];
+  if(idx!==undefined)playNote(idx);
+});
+
+// Init
+buildPiano();
+buildSongs();
+</script>
+</body>
+</html>
