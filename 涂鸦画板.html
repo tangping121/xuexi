@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎨 涂鸦画板</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FFF5F7 0%,#FFE4EC 30%,#F3E8FF 70%,#EDF2FF 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;user-select:none;overflow:hidden;
+}
+.header{
+  padding:10px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:600;background:linear-gradient(135deg,#E83E8C,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header-actions{display:flex;gap:6px}
+.header-actions button{
+  padding:6px 14px;border:none;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .15s;
+  background:#fff;color:#7C3AED;box-shadow:0 2px 8px rgba(124,58,237,.1);
+}
+.header-actions button:active{transform:scale(.88)}
+
+/* Toolbar */
+.toolbar{
+  display:flex;align-items:center;gap:6px;padding:6px 14px;flex-wrap:wrap;
+}
+.color-btn{
+  width:32px;height:32px;border-radius:50%;border:2.5px solid transparent;cursor:pointer;
+  transition:transform .15s;flex-shrink:0;
+}
+.color-btn:active{transform:scale(.85)}
+.color-btn.active{border-color:#1A1A2E;transform:scale(1.12)}
+.size-btn{
+  width:28px;height:28px;border-radius:50%;border:2px solid #E9D8FD;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;background:#fff;
+  transition:transform .15s;
+}
+.size-btn:active{transform:scale(.85)}
+.size-btn.active{border-color:#7C3AED;background:#FAF5FF}
+.size-dot{border-radius:50%;background:#7C3AED}
+.mode-btn{
+  padding:5px 12px;border:2px solid #E9D8FD;border-radius:99px;font-size:12px;font-weight:600;
+  cursor:pointer;background:#fff;color:#7C3AED;transition:all .15s;
+}
+.mode-btn:active{transform:scale(.9)}
+.mode-btn.active{background:#7C3AED;color:#fff;border-color:#7C3AED}
+.tool-sep{width:1px;height:28px;background:#E9D8FD;margin:0 2px}
+
+/* Canvas */
+.canvas-wrap{
+  flex:1;margin:0 10px 6px;border-radius:20px;overflow:hidden;
+  background:#fff;box-shadow:0 4px 20px rgba(124,58,237,.08);position:relative;
+}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+
+/* Sticker panel */
+.sticker-bar{
+  display:none;padding:6px 14px 8px;gap:6px;flex-wrap:wrap;
+}
+.sticker-bar.show{display:flex}
+.sticker-btn{
+  font-size:28px;cursor:pointer;padding:4px;border-radius:10px;background:#fff;
+  border:2px solid #E9D8FD;transition:transform .15s;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+}
+.sticker-btn:active{transform:scale(.85);background:#FAF5FF}
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎨 涂鸦画板</h1>
+  <div class="header-actions">
+    <button id="undoBtn">↩ 撤销</button>
+    <button id="saveBtn">💾 保存</button>
+    <button id="clearBtn">🗑️ 清空</button>
+  </div>
+</div>
+
+<div class="toolbar" id="toolbar"></div>
+<div class="sticker-bar" id="stickerBar"></div>
+
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Drawing Board
+// ═══════════════════════════════════════════
+const COLORS=['#FF4757','#FF6B81','#FF9FF3','#F368E0','#A29BFE','#7C3AED','#54A0FF','#2ED573','#1DD1A1','#FECA57','#FF9F43','#FF6348','#57606F','#2F3542','#FFFFFF','#DFE4EA'];
+const SIZES=[3,6,10,16,24];
+const STICKERS=['⭐','❤️','🌸','🐱','🍎','🌈','🦋','🐰','🌻','🦄','🎀','🐶','🍭','🌟','🌺','🐝'];
+
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+let isDrawing=false;
+let lastX=0,lastY=0;
+let currentColor='#FF4757';
+let currentSize=6;
+let mode='draw'; // draw | erase | sticker
+let history=[];
+let historyIdx=-1;
+const MAX_HISTORY=50;
+
+function resizeCanvas(){
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth*window.devicePixelRatio;
+  canvas.height=wrap.clientHeight*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  canvas.style.width=wrap.clientWidth+'px';
+  canvas.style.height=wrap.clientHeight+'px';
+  ctx.lineCap='round';ctx.lineJoin='round';
+  restoreHistory();
+}
+window.addEventListener('resize',resizeCanvas);
+
+function getPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return {x:t.clientX-rect.left,y:t.clientY-rect.top};
+}
+
+// ── Drawing ──
+function startDraw(e){e.preventDefault();const p=getPos(e);lastX=p.x;lastY=p.y;isDrawing=true;if(mode==='sticker')placeSticker(p.x,p.y)}
+function draw(e){if(!isDrawing)return;e.preventDefault();const p=getPos(e);if(mode==='erase'){ctx.strokeStyle='#FFFFFF'}else{ctx.strokeStyle=currentColor}
+  ctx.lineWidth=mode==='erase'?currentSize*3:currentSize;
+  ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();
+  lastX=p.x;lastY=p.y;
+}
+function stopDraw(e){e.preventDefault();if(isDrawing){isDrawing=false;saveHistory()}}
+
+canvas.addEventListener('mousedown',startDraw);
+canvas.addEventListener('mousemove',draw);
+canvas.addEventListener('mouseup',stopDraw);
+canvas.addEventListener('mouseleave',stopDraw);
+canvas.addEventListener('touchstart',startDraw,{passive:false});
+canvas.addEventListener('touchmove',draw,{passive:false});
+canvas.addEventListener('touchend',stopDraw,{passive:false});
+
+// ── Sticker ──
+let selectedSticker='⭐';
+function placeSticker(x,y){
+  ctx.font=currentSize*5+'px serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(selectedSticker,x,y);
+}
+
+// ── History ──
+function saveHistory(){
+  historyIdx++;if(historyIdx<history.length)history=history.slice(0,historyIdx);
+  history.push(canvas.toDataURL());
+  if(history.length>MAX_HISTORY){history.shift();historyIdx--}
+}
+function restoreHistory(){
+  if(historyIdx>=0&&history[historyIdx]){const img=new Image();img.onload=()=>{ctx.clearRect(0,0,canvas.width/window.devicePixelRatio,canvas.height/window.devicePixelRatio);ctx.drawImage(img,0,0)};img.src=history[historyIdx]}
+  else{ctx.clearRect(0,0,canvas.width/window.devicePixelRatio,canvas.height/window.devicePixelRatio)}
+}
+function undo(){
+  if(historyIdx>0){historyIdx--;restoreHistory()}else{showToast('没有更多了')}
+}
+
+// ── UI ──
+function buildUI(){
+  const tb=document.getElementById('toolbar');
+  // Colors
+  COLORS.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='color-btn'+(c===currentColor?' active':'');
+    btn.style.background=c;
+    if(c==='#FFFFFF')btn.style.border='2.5px solid #DFE4EA';
+    btn.onclick=()=>{
+      document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');currentColor=c;mode='draw';
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelector('#drawBtn').classList.add('active');
+      document.getElementById('stickerBar').classList.remove('show');
+    };
+    tb.appendChild(btn);
+  });
+
+  // Sep
+  const sep=document.createElement('div');sep.className='tool-sep';tb.appendChild(sep);
+
+  // Sizes
+  SIZES.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    btn.className='size-btn'+(s===currentSize?' active':'');
+    const dot=document.createElement('div');dot.className='size-dot';
+    const sz=[4,6,9,12,16];dot.style.width=sz[i]+'px';dot.style.height=sz[i]+'px';
+    btn.appendChild(dot);
+    btn.onclick=()=>{
+      document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');currentSize=s;
+    };
+    tb.appendChild(btn);
+  });
+
+  // Sep
+  const sep2=document.createElement('div');sep2.className='tool-sep';tb.appendChild(sep2);
+
+  // Draw mode
+  const drawBtn=document.createElement('button');
+  drawBtn.id='drawBtn';drawBtn.className='mode-btn active';drawBtn.textContent='✏️ 画笔';
+  drawBtn.onclick=()=>{
+    mode='draw';
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    drawBtn.classList.add('active');
+    document.getElementById('stickerBar').classList.remove('show');
+    canvas.style.cursor='crosshair';
+  };
+  tb.appendChild(drawBtn);
+
+  // Erase mode
+  const eraseBtn=document.createElement('button');
+  eraseBtn.className='mode-btn';eraseBtn.textContent='🧹 橡皮';
+  eraseBtn.onclick=()=>{
+    mode='erase';
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    eraseBtn.classList.add('active');
+    document.getElementById('stickerBar').classList.remove('show');
+    canvas.style.cursor='cell';
+  };
+  tb.appendChild(eraseBtn);
+
+  // Sticker mode
+  const stickerBtn=document.createElement('button');
+  stickerBtn.className='mode-btn';stickerBtn.textContent='⭐ 贴纸';
+  stickerBtn.onclick=()=>{
+    mode='sticker';
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    stickerBtn.classList.add('active');
+    document.getElementById('stickerBar').classList.add('show');
+    canvas.style.cursor='copy';
+  };
+  tb.appendChild(stickerBtn);
+
+  // Sticker bar
+  const sb=document.getElementById('stickerBar');
+  STICKERS.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='sticker-btn';btn.textContent=s;
+    btn.onclick=()=>{selectedSticker=s;showToast('已选 '+s)};
+    sb.appendChild(btn);
+  });
+}
+
+// ── Actions ──
+document.getElementById('undoBtn').addEventListener('click',undo);
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(confirm('确定清空画布吗？')){
+    ctx.clearRect(0,0,canvas.width/window.devicePixelRatio,canvas.height/window.devicePixelRatio);
+    history=[];historyIdx=-1;saveHistory();showToast('🗑️ 已清空');
+  }
+});
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download='我的画_'+(new Date().toISOString().slice(0,10))+'.png';
+  a.click();showToast('💾 已保存');
+});
+
+// ── Toast ──
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// ── Init ──
+buildUI();
+setTimeout(()=>{resizeCanvas();saveHistory()},100);
+</script>
+</body>
+</html>

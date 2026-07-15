@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🧩 记忆配对</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#EEF2FF 0%,#E0E7FF 30%,#F3E8FF 70%,#FAF5FF 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;user-select:none;
+}
+.header{
+  width:100%;padding:14px 18px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{
+  font-size:20px;font-weight:600;
+  background:linear-gradient(135deg,#7C3AED,#6366F1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header-right{display:flex;gap:8px;align-items:center}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .15s;
+}
+.header-right button:active{transform:scale(.82)}
+
+/* Stats */
+.stats{
+  display:flex;gap:20px;padding:4px 0 2px;font-size:13px;color:#6D28D9;font-weight:500;
+}
+.stats span{display:flex;align-items:center;gap:4px}
+
+/* Theme selector */
+.theme-bar{
+  display:flex;gap:6px;padding:6px 14px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  width:100%;
+}
+.theme-bar::-webkit-scrollbar{display:none}
+.theme-btn{
+  padding:5px 14px;border-radius:99px;border:2px solid #DDD6FE;
+  font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;background:#fff;color:#6D28D9;
+  transition:all .15s;flex-shrink:0;
+}
+.theme-btn:active{transform:scale(.9)}
+.theme-btn.active{background:#7C3AED;color:#fff;border-color:#7C3AED;box-shadow:0 2px 8px rgba(124,58,237,.25)}
+
+/* Difficulty */
+.diff-bar{
+  display:flex;gap:8px;padding:2px 0 4px;
+}
+.diff-btn{
+  padding:4px 16px;border-radius:99px;border:2px solid #DDD6FE;
+  font-size:12px;font-weight:500;cursor:pointer;background:#fff;color:#6D28D9;
+  transition:all .15s;
+}
+.diff-btn:active{transform:scale(.9)}
+.diff-btn.active{background:#8B5CF6;color:#fff;border-color:#8B5CF6}
+
+/* Grid */
+.grid-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:4px 10px 8px;width:100%;
+}
+.grid{
+  display:grid;gap:8px;width:100%;max-width:380px;
+}
+.card{
+  aspect-ratio:1;border-radius:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:600;
+  transition:transform .15s;position:relative;
+  -webkit-touch-callout:none;
+}
+.card:active{transform:scale(.92)}
+.card.face-down{
+  background:linear-gradient(145deg,#7C3AED,#6366F1);
+  box-shadow:0 4px 12px rgba(124,58,237,.25);
+  color:transparent;
+}
+.card.face-down::after{
+  content:'?';position:absolute;color:rgba(255,255,255,.35);
+  font-size:28px;font-weight:700;
+}
+.card.face-up{
+  background:#fff;box-shadow:0 2px 10px rgba(124,58,237,.1);
+  border:2px solid #DDD6FE;
+}
+.card.matched{
+  background:#D1FAE5;border-color:#34D399;box-shadow:0 2px 10px rgba(52,211,153,.2);
+  pointer-events:none;
+  animation:matchPop .35s ease;
+}
+@keyframes matchPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+/* Complete overlay */
+.complete{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  flex-direction:column;align-items:center;justify-content:center;gap:10px;
+}
+.complete.show{display:flex}
+.complete-box{
+  background:#fff;border-radius:28px;padding:32px 40px;
+  text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15);
+}
+.complete-box .trophy{font-size:72px}
+.complete-box .title{font-size:22px;font-weight:700;color:#1A1A2E;margin:8px 0}
+.complete-box .sub{font-size:14px;color:#6B7280}
+.complete-box .stars{margin:10px 0;font-size:28px}
+.complete-box button{
+  margin-top:10px;padding:12px 32px;border:none;border-radius:99px;
+  font-size:16px;font-weight:600;cursor:pointer;
+  background:linear-gradient(135deg,#7C3AED,#6366F1);color:#fff;
+  box-shadow:0 4px 16px rgba(124,58,237,.3);transition:transform .15s;
+}
+.complete-box button:active{transform:scale(.92)}
+
+#confetti-canvas{position:fixed;inset:0;z-index:200;pointer-events:none}
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:8px 20px;border-radius:99px;font-size:13px;
+  z-index:300;opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧩 记忆配对</h1>
+  <div class="header-right">
+    <button id="resetBtn">🔄</button>
+  </div>
+</div>
+
+<div class="stats">
+  <span>❤️ 剩余 <b id="movesLeft">0</b></span>
+  <span>⏱ <b id="timerDisplay">0</b>s</span>
+  <span>⭐ <b id="matchCount">0</b> 对</span>
+</div>
+
+<div class="theme-bar" id="themeBar"></div>
+<div class="diff-bar" id="diffBar"></div>
+
+<div class="grid-wrap">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="complete" id="completeOverlay">
+  <div class="complete-box">
+    <div class="trophy" id="trophyIcon">🏆</div>
+    <div class="title" id="completeTitle">全部找到啦！</div>
+    <div class="sub" id="completeSub">用时 30 秒</div>
+    <div class="stars" id="completeStars">⭐⭐⭐</div>
+    <button id="replayBtn">🔄 再来一局</button>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Data
+// ═══════════════════════════════════════════
+const THEMES={
+  '🐱 动物':['🐶','🐱','🐰','🐼','🦊','🐸','🐵','🦁','🐯','🐮','🐷','🐭','🐹','🐻','🐨','🐙','🦋','🐝','🐞','🦄','🐧','🐦','🐤','🐣','🐌','🐛','🐜','🐢','🐍','🦎'],
+  '🍎 水果':['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥝','🍅','🍆','🥑','🌽','🥕'],
+  '😊 表情':['😀','😂','🤩','😍','🥰','😎','🤗','😊','😇','🥳','😋','🤭','😜','🤪','😺','😸','😹','😻','😼','😽'],
+  '🌈 综合':['⭐','❤️','🌈','🌸','🎵','🌟','🔥','💎','🎀','🦄','🍭','🎈','🎁','🎂','🍀','🌙','☀️','⛄️','⚡️','🌊'],
+};
+const DIFFS=[
+  {label:'简单',cols:4,pairs:6,moves:20},
+  {label:'普通',cols:4,pairs:8,moves:16},
+  {label:'困难',cols:4,pairs:10,moves:14},
+];
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+let themeKey='🐱 动物';
+let diffIdx=0;
+let cards=[];
+let flipped=[];
+let matched=new Set();
+let movesLeft=0;
+let matchCount=0;
+let timer=0;
+let timerId=null;
+let isProcessing=false;
+let gameStarted=false;
+
+const STARS_KEY='memory_stars';
+
+// ═══════════════════════════════════════════
+// DOM
+// ═══════════════════════════════════════════
+const grid=document.getElementById('grid');
+const movesLeftEl=document.getElementById('movesLeft');
+const timerDisplay=document.getElementById('timerDisplay');
+const matchCountEl=document.getElementById('matchCount');
+const themeBar=document.getElementById('themeBar');
+const diffBar=document.getElementById('diffBar');
+
+function initGame(){
+  const pairs=DIFFS[diffIdx].pairs;
+  const pool=THEMES[themeKey];
+  const selected=[];
+  for(let i=0;i<pairs;i++)selected.push(pool[i%pool.length]);
+  cards=[...selected,...selected];
+  for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]]}
+  flipped=[];matched=new Set();matchCount=0;isProcessing=false;gameStarted=false;
+  movesLeft=DIFFS[diffIdx].moves;
+  timer=0;
+  if(timerId){clearInterval(timerId);timerId=null}
+  updateUI();
+  renderGrid();
+  document.getElementById('completeOverlay').classList.remove('show');
+}
+
+function renderGrid(){
+  const cols=DIFFS[diffIdx].cols;
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.innerHTML=cards.map((emoji,i)=>{
+    const isMatched=matched.has(i);
+    return `<div class="card face-down${isMatched?' matched':''}" data-idx="${i}">${isMatched?emoji:''}</div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card:not(.matched)').forEach(el=>{
+    el.addEventListener('click',()=>handleClick(parseInt(el.dataset.idx)));
+  });
+}
+
+function handleClick(idx){
+  if(isProcessing)return;
+  if(matched.has(idx))return;
+  if(flipped.includes(idx))return;
+  if(flipped.length>=2)return;
+
+  if(!gameStarted){
+    gameStarted=true;
+    timerId=setInterval(()=>{timer++;timerDisplay.textContent=timer},1000);
+  }
+
+  flipped.push(idx);
+  const el=grid.querySelector(`.card[data-idx="${idx}"]`);
+  el.textContent=cards[idx];
+  el.classList.remove('face-down');
+  el.classList.add('face-up');
+
+  if(flipped.length===2){
+    isProcessing=true;
+    movesLeft--;
+    updateUI();
+
+    const [a,b]=flipped;
+    if(cards[a]===cards[b]){
+      // Match!
+      matched.add(a);matched.add(b);
+      matchCount++;
+      const elA=grid.querySelector(`.card[data-idx="${a}"]`);
+      const elB=grid.querySelector(`.card[data-idx="${b}"]`);
+      elA.classList.remove('face-up');elA.classList.add('matched');
+      elB.classList.remove('face-up');elB.classList.add('matched');
+      elA.textContent=cards[a];elB.textContent=cards[b];
+      flipped=[];
+      isProcessing=false;
+      updateUI();
+
+      const totalPairs=DIFFS[diffIdx].pairs;
+      if(matched.size===totalPairs*2){
+        clearInterval(timerId);
+        showComplete();
+        showConfetti(80);
+      }
+    }else{
+      // No match
+      setTimeout(()=>{
+        const elA=grid.querySelector(`.card[data-idx="${a}"]`);
+        const elB=grid.querySelector(`.card[data-idx="${b}"]`);
+        elA.textContent='';elA.classList.remove('face-up');elA.classList.add('face-down');
+        elB.textContent='';elB.classList.remove('face-up');elB.classList.add('face-down');
+        flipped=[];
+        isProcessing=false;
+      },800);
+
+      if(movesLeft<=0){
+        setTimeout(()=>{
+          clearInterval(timerId);
+          showComplete(false);
+        },900);
+      }
+    }
+  }
+}
+
+function updateUI(){
+  movesLeftEl.textContent=movesLeft;
+  matchCountEl.textContent=matchCount;
+  timerDisplay.textContent=timer;
+}
+
+function showComplete(win=true){
+  const overlay=document.getElementById('completeOverlay');
+  const pairs=DIFFS[diffIdx].pairs;
+  document.getElementById('trophyIcon').textContent=win?'🏆':'💪';
+  document.getElementById('completeTitle').textContent=win?'全部找到啦！':(matchCount+' 对配对成功');
+  document.getElementById('completeSub').textContent='用时 '+timer+' 秒';
+
+  // Stars based on performance
+  let starCount=0;
+  if(win){
+    const ratio=movesLeft/DIFFS[diffIdx].moves;
+    starCount= ratio>=0.5?3:ratio>=0.25?2:1;
+  }else{
+    starCount= matchCount>=pairs*0.7?2:matchCount>=pairs*0.4?1:0;
+  }
+  document.getElementById('completeStars').textContent='⭐'.repeat(Math.max(1,starCount))+'☆'.repeat(3-starCount);
+  overlay.classList.add('show');
+}
+
+document.getElementById('replayBtn').addEventListener('click',()=>initGame());
+
+// ── Theme & Diff UI ──
+function buildThemeBar(){
+  themeBar.innerHTML='';
+  Object.keys(THEMES).forEach((k,i)=>{
+    const btn=document.createElement('button');
+    btn.className='theme-btn'+(k===themeKey?' active':'');
+    btn.textContent=k;
+    btn.onclick=()=>{
+      themeKey=k;
+      themeBar.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      initGame();
+    };
+    themeBar.appendChild(btn);
+  });
+}
+function buildDiffBar(){
+  diffBar.innerHTML='';
+  DIFFS.forEach((d,i)=>{
+    const btn=document.createElement('button');
+    btn.className='diff-btn'+(i===diffIdx?' active':'');
+    btn.textContent=d.label+` (${d.pairs}对)`;
+    btn.onclick=()=>{
+      diffIdx=i;
+      diffBar.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      initGame();
+    };
+    diffBar.appendChild(btn);
+  });
+}
+
+// ── Confetti ──
+function showConfetti(n){
+  const c=document.getElementById('confetti-canvas');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const colors=['#7C3AED','#6366F1','#F59E0B','#10B981','#EC4899','#3B82F6'];
+  const ps=[];
+  for(let i=0;i<(n||60);i++)ps.push({x:Math.random()*c.width,y:-Math.random()*c.height,w:4+Math.random()*6,h:3+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],vy:2+Math.random()*3,vx:-1+Math.random()*2,rot:Math.random()*360,rv:-4+Math.random()*8,alpha:1});
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);let alive=false;
+    for(const p of ps){p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;p.alpha-=0.004;if(p.alpha<=0)continue;alive=true;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore()}
+    if(alive&&frame++<250)requestAnimationFrame(draw);else{ctx.clearRect(0,0,c.width,c.height);c.width=0;c.height=0}
+  }
+  draw();
+}
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('重新开始？'))initGame();
+});
+
+// Keyboard
+document.addEventListener('keydown',e=>{if(e.key==='r')initGame()});
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// Init
+buildThemeBar();
+buildDiffBar();
+initGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>📜 古诗启蒙</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC','Noto Sans SC',serif;
+  background:linear-gradient(160deg,#FEFCE8 0%,#FFF7ED 40%,#FEF3C7 70%,#FDF2F8 100%);
+  min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;user-select:none;
+}
+.header{
+  padding:14px 18px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:600;color:#92400E}
+.header button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .15s;
+}
+.header button:active{transform:scale(.85)}
+
+/* Poem selector */
+.poem-tabs{
+  display:flex;gap:6px;padding:6px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.poem-tabs::-webkit-scrollbar{display:none}
+.poem-tab{
+  padding:6px 16px;border-radius:99px;border:2px solid #FDE68A;
+  font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:#fff;color:#92400E;
+  transition:all .15s;flex-shrink:0;
+}
+.poem-tab:active{transform:scale(.92)}
+.poem-tab.active{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-color:#D97706;box-shadow:0 2px 8px rgba(217,119,6,.25)}
+
+/* Main area */
+.main{
+  flex:1;display:flex;flex-direction:column;padding:8px 16px 12px;overflow:auto;
+}
+.poem-card{
+  background:#fff;border-radius:24px;padding:24px 20px 20px;
+  box-shadow:0 4px 24px rgba(217,119,6,.08);border:1px solid rgba(253,230,138,.3);
+  flex:1;display:flex;flex-direction:column;
+}
+.poem-title{
+  font-size:24px;font-weight:700;color:#1A1A2E;text-align:center;
+}
+.poem-author{
+  font-size:14px;color:#D97706;text-align:center;margin-bottom:12px;
+}
+.poem-body{
+  flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center;padding:4px 0;
+}
+.poem-line{
+  display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;
+  cursor:pointer;transition:background .15s;
+}
+.poem-line:active{background:#FFFBEB}
+.poem-line .cn{font-size:20px;font-weight:500;color:#1A1A2E;letter-spacing:2px;line-height:1.7}
+.poem-line .py{font-size:12px;color:#D97706;font-weight:400;min-width:30px}
+.poem-line .sound{
+  font-size:16px;opacity:.4;margin-left:auto;transition:opacity .15s;
+}
+.poem-line:active .sound{opacity:1}
+
+/* Quiz mode toggle */
+.mode-toggle{
+  display:flex;gap:8px;justify-content:center;margin-bottom:8px;
+}
+.mode-btn{
+  padding:6px 18px;border-radius:99px;border:2px solid #FDE68A;
+  font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#92400E;
+  transition:all .15s;
+}
+.mode-btn.active{background:#F59E0B;color:#fff;border-color:#D97706}
+.mode-btn:active{transform:scale(.92)}
+
+/* Quiz */
+.quiz-area{display:none;flex-direction:column;gap:8px;padding:4px 0}
+.quiz-area.show{display:flex}
+.quiz-q{
+  font-size:20px;font-weight:500;color:#1A1A2E;letter-spacing:2px;text-align:center;padding:8px 0;
+}
+.quiz-q .blank{display:inline-block;min-width:32px;border-bottom:3px solid #F59E0B;margin:0 2px;color:#D97706}
+.quiz-options{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+}
+.quiz-opt{
+  padding:8px 24px;border-radius:99px;border:2px solid #FDE68A;
+  font-size:18px;cursor:pointer;background:#FFFBEB;color:#92400E;
+  transition:all .15s;
+}
+.quiz-opt:active{transform:scale(.9)}
+.quiz-opt.correct{background:#D1FAE5;border-color:#34D399;color:#065F46}
+.quiz-opt.wrong{background:#FEE2E2;border-color:#F87171;color:#991B1B}
+.quiz-opt.disabled{pointer-events:none;opacity:.6}
+.quiz-feedback{text-align:center;font-size:16px;font-weight:500;min-height:28px}
+
+/* Navigation */
+.controls{
+  display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 0 0;
+}
+.controls button{
+  border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s;
+}
+.controls button:active{transform:scale(.85)}
+.btn-nav{
+  width:48px;height:48px;background:#fff;font-size:20px;color:#92400E;
+  box-shadow:0 2px 10px rgba(217,119,6,.12);
+}
+.index-dot{
+  font-size:13px;color:#D97706;font-weight:500;min-width:40px;text-align:center;
+}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:8px 20px;border-radius:99px;font-size:13px;
+  z-index:200;opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📜 古诗启蒙</h1>
+  <button id="shuffleBtn">🎲</button>
+</div>
+
+<div class="poem-tabs" id="poemTabs"></div>
+
+<div class="main">
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="readModeBtn">📖 诵读</button>
+    <button class="mode-btn" id="quizModeBtn">✏️ 填空</button>
+  </div>
+
+  <div class="poem-card" id="poemCard">
+    <div class="poem-title" id="poemTitle">咏鹅</div>
+    <div class="poem-author" id="poemAuthor">骆宾王</div>
+    <div class="poem-body" id="poemBody"></div>
+    <div class="quiz-area" id="quizArea"></div>
+    <div class="controls">
+      <button class="btn-nav" id="prevBtn">◀</button>
+      <span class="index-dot" id="indexDot">1/10</span>
+      <button class="btn-nav" id="nextBtn">▶</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// Poem Data
+// ═══════════════════════════════════════════
+const POEMS = [
+  {
+    title:'咏鹅',author:'骆宾王',
+    lines:[
+      {cn:'鹅鹅鹅',py:'é é é'},
+      {cn:'曲项向天歌',py:'qǔ xiàng xiàng tiān gē'},
+      {cn:'白毛浮绿水',py:'bái máo fú lǜ shuǐ'},
+      {cn:'红掌拨清波',py:'hóng zhǎng bō qīng bō'},
+    ],
+    blanks:[
+      {text:'_鹅鹅',answer:'鹅'},
+      {text:'曲项向天_',answer:'歌'},
+      {text:'白毛浮_水',answer:'绿'},
+      {text:'红掌拨清_',answer:'波'},
+    ]
+  },
+  {
+    title:'静夜思',author:'李白',
+    lines:[
+      {cn:'床前明月光',py:'chuáng qián míng yuè guāng'},
+      {cn:'疑是地上霜',py:'yí shì dì shàng shuāng'},
+      {cn:'举头望明月',py:'jǔ tóu wàng míng yuè'},
+      {cn:'低头思故乡',py:'dī tóu sī gù xiāng'},
+    ],
+    blanks:[
+      {text:'床前明_光',answer:'月'},
+      {text:'疑是地上_',answer:'霜'},
+      {text:'举头望明_',answer:'月'},
+      {text:'低头思故_',answer:'乡'},
+    ]
+  },
+  {
+    title:'春晓',author:'孟浩然',
+    lines:[
+      {cn:'春眠不觉晓',py:'chūn mián bù jué xiǎo'},
+      {cn:'处处闻啼鸟',py:'chù chù wén tí niǎo'},
+      {cn:'夜来风雨声',py:'yè lái fēng yǔ shēng'},
+      {cn:'花落知多少',py:'huā luò zhī duō shǎo'},
+    ],
+    blanks:[
+      {text:'春眠不觉_',answer:'晓'},
+      {text:'处处闻啼_',answer:'鸟'},
+      {text:'夜来风雨_',answer:'声'},
+      {text:'花落知多_',answer:'少'},
+    ]
+  },
+  {
+    title:'悯农',author:'李绅',
+    lines:[
+      {cn:'锄禾日当午',py:'chú hé rì dāng wǔ'},
+      {cn:'汗滴禾下土',py:'hàn dī hé xià tǔ'},
+      {cn:'谁知盘中餐',py:'shuí zhī pán zhōng cān'},
+      {cn:'粒粒皆辛苦',py:'lì lì jiē xīn kǔ'},
+    ],
+    blanks:[
+      {text:'锄禾日当_',answer:'午'},
+      {text:'汗滴禾下_',answer:'土'},
+      {text:'谁知盘中_',answer:'餐'},
+      {text:'粒粒皆辛_',answer:'苦'},
+    ]
+  },
+  {
+    title:'登鹳雀楼',author:'王之涣',
+    lines:[
+      {cn:'白日依山尽',py:'bái rì yī shān jìn'},
+      {cn:'黄河入海流',py:'huáng hé rù hǎi liú'},
+      {cn:'欲穷千里目',py:'yù qióng qiān lǐ mù'},
+      {cn:'更上一层楼',py:'gèng shàng yī céng lóu'},
+    ],
+    blanks:[
+      {text:'白日依山_',answer:'尽'},
+      {text:'黄河入海_',answer:'流'},
+      {text:'欲穷千里_',answer:'目'},
+      {text:'更上一层_',answer:'楼'},
+    ]
+  },
+  {
+    title:'江南',author:'汉乐府',
+    lines:[
+      {cn:'江南可采莲',py:'jiāng nán kě cǎi lián'},
+      {cn:'莲叶何田田',py:'lián yè hé tián tián'},
+      {cn:'鱼戏莲叶间',py:'yú xì lián yè jiān'},
+      {cn:'鱼戏莲叶东',py:'yú xì lián yè dōng'},
+      {cn:'鱼戏莲叶西',py:'yú xì lián yè xī'},
+      {cn:'鱼戏莲叶南',py:'yú xì lián yè nán'},
+      {cn:'鱼戏莲叶北',py:'yú xì lián yè běi'},
+    ],
+    blanks:[
+      {text:'江南可采_',answer:'莲'},
+      {text:'莲叶何田_',answer:'田'},
+      {text:'鱼戏莲叶_',answer:'间'},
+      {text:'鱼戏莲叶_',answer:'北'},
+    ]
+  },
+  {
+    title:'画',author:'王维',
+    lines:[
+      {cn:'远看山有色',py:'yuǎn kàn shān yǒu sè'},
+      {cn:'近听水无声',py:'jìn tīng shuǐ wú shēng'},
+      {cn:'春去花还在',py:'chūn qù huā hái zài'},
+      {cn:'人来鸟不惊',py:'rén lái niǎo bù jīng'},
+    ],
+    blanks:[
+      {text:'远看山有_',answer:'色'},
+      {text:'近听水无_',answer:'声'},
+      {text:'春去花还_',answer:'在'},
+      {text:'人来鸟不_',answer:'惊'},
+    ]
+  },
+  {
+    title:'古朗月行',author:'李白',
+    lines:[
+      {cn:'小时不识月',py:'xiǎo shí bù shí yuè'},
+      {cn:'呼作白玉盘',py:'hū zuò bái yù pán'},
+      {cn:'又疑瑶台镜',py:'yòu yí yáo tái jìng'},
+      {cn:'飞在青云端',py:'fēi zài qīng yún duān'},
+    ],
+    blanks:[
+      {text:'小时不识_',answer:'月'},
+      {text:'呼作白玉_',answer:'盘'},
+      {text:'又疑瑶台_',answer:'镜'},
+      {text:'飞在青云_',answer:'端'},
+    ]
+  },
+  {
+    title:'相思',author:'王维',
+    lines:[
+      {cn:'红豆生南国',py:'hóng dòu shēng nán guó'},
+      {cn:'春来发几枝',py:'chūn lái fā jǐ zhī'},
+      {cn:'愿君多采撷',py:'yuàn jūn duō cǎi xié'},
+      {cn:'此物最相思',py:'cǐ wù zuì xiāng sī'},
+    ],
+    blanks:[
+      {text:'红豆生南_',answer:'国'},
+      {text:'春来发几_',answer:'枝'},
+      {text:'愿君多采_',answer:'撷'},
+      {text:'此物最相_',answer:'思'},
+    ]
+  },
+  {
+    title:'赋得古原草送别',author:'白居易',
+    lines:[
+      {cn:'离离原上草',py:'lí lí yuán shàng cǎo'},
+      {cn:'一岁一枯荣',py:'yī suì yī kū róng'},
+      {cn:'野火烧不尽',py:'yě huǒ shāo bù jìn'},
+      {cn:'春风吹又生',py:'chūn fēng chuī yòu shēng'},
+    ],
+    blanks:[
+      {text:'离离原上_',answer:'草'},
+      {text:'一岁一枯_',answer:'荣'},
+      {text:'野火烧不_',answer:'尽'},
+      {text:'春风吹又_',answer:'生'},
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+let currentIdx=0;
+let isQuiz=false;
+
+const poemTabs=document.getElementById('poemTabs');
+const poemTitle=document.getElementById('poemTitle');
+const poemAuthor=document.getElementById('poemAuthor');
+const poemBody=document.getElementById('poemBody');
+const quizArea=document.getElementById('quizArea');
+const indexDot=document.getElementById('indexDot');
+
+function speak(text,cb){
+  if(!window.speechSynthesis)return cb&&cb();
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='zh-CN';u.rate=.8;u.pitch=1;
+  u.onend=()=>cb&&cb();
+  window.speechSynthesis.speak(u);
+}
+
+function renderPoem(){
+  const p=POEMS[currentIdx];
+  poemTitle.textContent=p.title;
+  poemAuthor.textContent=p.author;
+  indexDot.textContent=(currentIdx+1)+'/'+POEMS.length;
+
+  // Reading mode
+  poemBody.innerHTML=p.lines.map((l,i)=>`
+    <div class="poem-line" data-idx="${i}">
+      <span class="py">${l.py}</span>
+      <span class="cn">${l.cn}</span>
+      <span class="sound">🔊</span>
+    </div>
+  `).join('');
+
+  poemBody.querySelectorAll('.poem-line').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const idx=parseInt(el.dataset.idx);
+      const line=p.lines[idx];
+      speak(line.cn);
+    });
+  });
+
+  // Quiz mode
+  quizArea.innerHTML='';
+  if(isQuiz){
+    quizArea.classList.add('show');
+    poemBody.style.display='none';
+    renderQuiz(p);
+  }else{
+    quizArea.classList.remove('show');
+    poemBody.style.display='flex';
+  }
+
+  // Update tabs
+  poemTabs.querySelectorAll('.poem-tab').forEach((t,i)=>t.classList.toggle('active',i===currentIdx));
+}
+
+function renderQuiz(p){
+  const blanks=p.blanks||[];
+  if(!blanks.length){
+    quizArea.innerHTML='<div style="text-align:center;color:#D97706;padding:20px">暂无题目</div>';
+    return;
+  }
+  // Pick random blank
+  const qi=Math.floor(Math.random()*blanks.length);
+  const q=blanks[qi];
+  const displayText=q.text.replace('_','<span class="blank">?</span>');
+  const opts=[q.answer];
+  // Generate wrong options from other poems
+  const allChars=POEMS.flatMap(pl=>pl.blanks.map(b=>b.answer)).filter(c=>c!==q.answer);
+  const shuffChars=[...new Set(allChars)];
+  for(let i=shuffChars.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffChars[i],shuffChars[j]]=[shuffChars[j],shuffChars[i]]}
+  while(opts.length<4&&shuffChars.length){const c=shuffChars.pop();if(!opts.includes(c))opts.push(c)}
+  // Shuffle options
+  for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]]}
+
+  quizArea.innerHTML=`
+    <div class="quiz-q">${displayText}</div>
+    <div class="quiz-options">${opts.map(o=>`<div class="quiz-opt" data-ans="${o}">${o}</div>`).join('')}</div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+    <div style="text-align:center;margin-top:4px"><button class="mode-btn" id="nextQuizBtn" style="font-size:12px;padding:4px 16px">下一题 ➜</button></div>
+  `;
+
+  const fb=document.getElementById('quizFeedback');
+  quizArea.querySelectorAll('.quiz-opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(el.classList.contains('disabled'))return;
+      quizArea.querySelectorAll('.quiz-opt').forEach(b=>b.classList.add('disabled'));
+      const ans=el.dataset.ans;
+      if(ans===q.answer){
+        el.classList.add('correct');
+        fb.textContent='🎉 答对了！太棒啦！';
+        fb.style.color='#059669';
+        setTimeout(()=>{
+          const p=POEMS[currentIdx];
+          speak(p.lines[qi%p.lines.length]?.cn||ans);
+        },300);
+      }else{
+        el.classList.add('wrong');
+        quizArea.querySelectorAll('.quiz-opt').forEach(b=>{
+          if(b.dataset.ans===q.answer)b.classList.add('correct');
+        });
+        fb.textContent='❌ 再想想～';
+        fb.style.color='#DC2626';
+      }
+    });
+  });
+  document.getElementById('nextQuizBtn')?.addEventListener('click',()=>renderQuiz(p));
+}
+
+// ── Tabs ──
+function buildTabs(){
+  POEMS.forEach((p,i)=>{
+    const tab=document.createElement('button');
+    tab.className='poem-tab'+(i===0?' active':'');
+    tab.textContent=(p.title.length>4?p.title.slice(0,4):p.title);
+    tab.onclick=()=>{currentIdx=i;renderPoem();tab.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'})};
+    poemTabs.appendChild(tab);
+  });
+}
+
+// ── Events ──
+document.getElementById('prevBtn').addEventListener('click',()=>{
+  currentIdx=(currentIdx-1+POEMS.length)%POEMS.length;renderPoem();
+});
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  currentIdx=(currentIdx+1)%POEMS.length;renderPoem();
+});
+document.getElementById('shuffleBtn').addEventListener('click',()=>{
+  let i;do{i=Math.floor(Math.random()*POEMS.length)}while(i===currentIdx&&POEMS.length>1);
+  currentIdx=i;renderPoem();showToast('🎲 随机一首');
+});
+document.getElementById('readModeBtn').addEventListener('click',()=>{
+  isQuiz=false;
+  document.getElementById('readModeBtn').classList.add('active');
+  document.getElementById('quizModeBtn').classList.remove('active');
+  renderPoem();
+});
+document.getElementById('quizModeBtn').addEventListener('click',()=>{
+  isQuiz=true;
+  document.getElementById('quizModeBtn').classList.add('active');
+  document.getElementById('readModeBtn').classList.remove('active');
+  renderPoem();
+});
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft')document.getElementById('prevBtn').click();
+  else if(e.key==='ArrowRight')document.getElementById('nextBtn').click();
+});
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// Init
+buildTabs();
+renderPoem();
+</script>
+</body>
+</html>
