@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🌸 学习乐园 - 幼小衔接</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FDF2F8 0%,#F3E8FF 30%,#EEF2FF 60%,#FEF3C7 100%);
+  min-height:100vh;min-height:100dvh;padding:20px 16px 40px;
+}
+.header{text-align:center;padding:20px 0 8px}
+.header h1{
+  font-size:28px;font-weight:700;
+  background:linear-gradient(135deg,#E83E8C,#7C3AED,#F59E0B);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header p{font-size:14px;color:#7C3AED;margin-top:4px;opacity:.7}
+.subtitle{text-align:center;font-size:13px;color:#6B7280;margin-bottom:16px}
+
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;margin:0 auto}
+.app-card{
+  background:#fff;border-radius:20px;padding:16px 12px;text-decoration:none;
+  box-shadow:0 4px 16px rgba(124,58,237,.08);border:1.5px solid rgba(124,58,237,.08);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  transition:transform .15s,box-shadow .15s;
+}
+.app-card:active{transform:scale(.95);box-shadow:0 2px 8px rgba(124,58,237,.12)}
+.app-card .icon{font-size:40px;line-height:1}
+.app-card .name{font-size:15px;font-weight:600;color:#1A1A2E}
+.app-card .desc{font-size:11px;color:#6B7280;text-align:center;line-height:1.4}
+.tag{
+  font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;
+}
+.tag.done{background:#D1FAE5;color:#065F46}
+.tag.new{background:#FEF3C7;color:#92400E;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+.footer{text-align:center;margin-top:20px;font-size:12px;color:#9CA3AF}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🌸 学习乐园</h1>
+  <p>5岁幼小衔接 · 语数外全科启蒙</p>
+</div>
+<p class="subtitle">✨ 点击图标开始学习</p>
+
+<div class="app-grid">
+  <a class="app-card" href="识字闪卡.html">
+    <div class="icon">📘</div>
+    <div class="name">识字闪卡</div>
+    <div class="desc">80个汉字 · 拼音词组 · 语音朗读</div>
+    <span class="tag done">已上线</span>
+  </a>
+  <a class="app-card" href="古诗启蒙.html">
+    <div class="icon">📜</div>
+    <div class="name">古诗启蒙</div>
+    <div class="desc">10首古诗 · 逐句拼音 · 填空模式</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="数学闯关.html">
+    <div class="icon">🧮</div>
+    <div class="name">数学闯关</div>
+    <div class="desc">加减法 · 6关闯关 · 圆点可视化</div>
+    <span class="tag done">已上线</span>
+  </a>
+  <a class="app-card" href="英语闪卡.html">
+    <div class="icon">🌐</div>
+    <div class="name">英语闪卡</div>
+    <div class="desc">40单词 · emoji · 美式发音</div>
+    <span class="tag done">已上线</span>
+  </a>
+  <a class="app-card" href="涂鸦画板.html">
+    <div class="icon">🎨</div>
+    <div class="name">涂鸦画板</div>
+    <div class="desc">自由画画 · 贴纸 · 保存到相册</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="记忆配对.html">
+    <div class="icon">🧩</div>
+    <div class="name">记忆配对</div>
+    <div class="desc">翻牌记忆 · 4种主题 · 3种难度</div>
+    <span class="tag new">新</span>
+  </a>
+</div>
+
+<div class="footer">
+  💖 爸爸给女儿做的学习小乐园
+</div>
+</body>
+</html>
