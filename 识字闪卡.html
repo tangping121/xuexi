@@ -578,19 +578,11 @@ function flipCard(flip){
 // ═══════════════════════════════════════════
 function speakChar(c){
   if(!c)return;
-  if(!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(c.char);
-  u.lang='zh-CN';u.rate=.85;u.pitch=1.1;
-  window.speechSynthesis.speak(u);
+  AudioSys.speak(c.char, {rate:0.85, pitch:1.1});
 }
 function speakPinyin(c){
   if(!c)return;
-  if(!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(c.pinyin);
-  u.lang='zh-CN';u.rate=.75;u.pitch=1.05;
-  window.speechSynthesis.speak(u);
+  AudioSys.speak(c.pinyin, {rate:0.75, pitch:1.05});
 }
 
 // ═══════════════════════════════════════════
@@ -674,6 +666,7 @@ function toggleStar(){
   }else{
     learned.add(c.char);
     showToast('⭐ 学会啦！');
+    AudioSys.star();
     showConfetti();
   }
   saveLearned();
@@ -881,6 +874,19 @@ function showToast(msg){
 //  Init
 // ═══════════════════════════════════════════
 loadData();
+// Audio system for instant sound effects + optimized speech
+const AudioSys = (function(){
+  let ctx = null; let warmed = false;
+  function getCtx(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+  function warmup(){if(warmed)return;warmed=true;if(!window.speechSynthesis)return;window.speechSynthesis.getVoices();window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(' ');u.volume=0;window.speechSynthesis.speak(u)}
+  function speak(text,opts){if(!text||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=(opts&&opts.lang)||'zh-CN';u.rate=(opts&&opts.rate)||.8;u.pitch=(opts&&opts.pitch)||1;const vs=window.speechSynthesis.getVoices&&window.speechSynthesis.getVoices();if(vs&&vs.length){const zh=vs.find(v=>v.lang.startsWith('zh'));if(u.lang.startsWith('zh')&&zh)u.voice=zh}window.speechSynthesis.speak(u)}
+  function pt(f,d,t,v){try{const c=getCtx(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t||'sine';o.frequency.setValueAtTime(f,c.currentTime);g.gain.setValueAtTime(v||.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d)}catch(e){}}
+  function star(){pt(880,.1,'sine',.15);setTimeout(()=>pt(1100,.15,'sine',.15),80);setTimeout(()=>pt(1320,.2,'sine',.15),160)}
+  function celebrate(){const ns=[523,587,659,698,784,880,988,1047];ns.forEach((f,i)=>setTimeout(()=>pt(f,.15,'sine',.15),i*80))}
+  function chime(){pt(660,.3,'sine',.12);setTimeout(()=>pt(880,.4,'sine',.12),150)}
+  if(document.readyState==='complete')warmup();else window.addEventListener('load',warmup);setTimeout(warmup,500);
+  return{speak,star,celebrate,chime,getCtx,warmup};
+})();
 renderCard();
 </script>
 </body>

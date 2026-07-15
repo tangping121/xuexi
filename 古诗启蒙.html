@@ -326,12 +326,8 @@ const quizArea=document.getElementById('quizArea');
 const indexDot=document.getElementById('indexDot');
 
 function speak(text,cb){
-  if(!window.speechSynthesis)return cb&&cb();
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang='zh-CN';u.rate=.8;u.pitch=1;
-  u.onend=()=>cb&&cb();
-  window.speechSynthesis.speak(u);
+  AudioSys.speak(text, {rate:0.8, pitch:1});
+  if(cb) setTimeout(cb, text.replace(/\s/g,'').length*150+200);
 }
 
 function renderPoem(){
@@ -470,6 +466,14 @@ let toastTimer;
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
 
 // Init
+const AudioSys = (function(){
+  let ctx=null;let w=false;
+  function gC(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+  function W(){if(w)return;w=true;if(!window.speechSynthesis)return;window.speechSynthesis.getVoices();window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(' ');u.volume=0;window.speechSynthesis.speak(u)}
+  function s(t,o){if(!t||!window.speechSynthesis)return;window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang=(o&&o.lang)||'zh-CN';u.rate=(o&&o.rate)||.8;u.pitch=(o&&o.pitch)||1;var vs=window.speechSynthesis.getVoices&&window.speechSynthesis.getVoices();if(vs&&vs.length){var zh=vs.find(function(v){return v.lang.startsWith('zh')});if(u.lang.startsWith('zh')&&zh)u.voice=zh}window.speechSynthesis.speak(u)}
+  if(document.readyState==='complete')W();else window.addEventListener('load',W);setTimeout(W,500);
+  return{s:s,gC:gC};
+})();
 buildTabs();
 renderPoem();
 </script>

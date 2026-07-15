@@ -221,22 +221,11 @@ function updateProgress(){
 // ── Speech ──
 function speakPinyin(py){
   if(!soundOn)return;
-  if(!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(py+' ');
-  u.lang='zh-CN';u.rate=.7;u.pitch=.9;
-  window.speechSynthesis.speak(u);
+  AudioSys.speak(py, {rate:0.7, pitch:0.9});
 }
-
 function speakWithTone(py,tone){
   if(!soundOn)return;
-  if(!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();
-  const numToMark={'1':'','2':'ˊ','3':'ˇ','4':'ˋ'};
-  const display=py+numToMark[tone]||'';
-  const u=new SpeechSynthesisUtterance(py+tone);
-  u.lang='zh-CN';u.rate=.6;u.pitch=1;
-  window.speechSynthesis.speak(u);
+  AudioSys.speak(py+tone, {rate:0.65, pitch:1});
 }
 
 // ── Render ──
@@ -326,6 +315,7 @@ function nextQuiz(){
         el.classList.add('correct');
         document.getElementById('quizFb').textContent='🎉 答对啦！太棒了！';
         document.getElementById('quizFb').style.color='#059669';
+        AudioSys.s('🎵',{rate:1});AudioSys.cel();
         stars+=2;updateStars();saveState();
         showConfetti(30);
         if(!learned.has(ans)){learned.add(ans);saveState();updateProgress()}
@@ -333,6 +323,8 @@ function nextQuiz(){
         setTimeout(()=>speakWithTone(quizCorrectAnswer,quizTone),600);
       }else{
         el.classList.add('wrong');
+        // Play wrong sound
+        try{var c=AudioSys.gC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='square';o.frequency.setValueAtTime(300,c.currentTime);g.gain.setValueAtTime(.1,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.3);o.start();o.stop(c.currentTime+.5)}catch(e){}
         quizArea.querySelectorAll('.quiz-opt').forEach(b=>{
           if(b.dataset.py===quizCorrectAnswer)b.classList.add('reveal');
         });
@@ -414,6 +406,18 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 
 // Init
 loadState();
+// Audio system
+const AudioSys = (function(){
+  let ctx=null;let w=false;
+  function gC(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+  function W(){if(w)return;w=true;if(!window.speechSynthesis)return;window.speechSynthesis.getVoices();window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(' ');u.volume=0;window.speechSynthesis.speak(u)}
+  function s(t,o){if(!t||!window.speechSynthesis)return;window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang=(o&&o.lang)||'zh-CN';u.rate=(o&&o.rate)||.8;u.pitch=(o&&o.pitch)||1;var vs=window.speechSynthesis.getVoices&&window.speechSynthesis.getVoices();if(vs&&vs.length){var zh=vs.find(function(v){return v.lang.startsWith('zh')});if(u.lang.startsWith('zh')&&zh)u.voice=zh}window.speechSynthesis.speak(u)}
+  function pt(f,d,t,v){try{var c=gC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t||'sine';o.frequency.setValueAtTime(f,c.currentTime);g.gain.setValueAtTime(v||.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d)}catch(e){}}
+  function star(){pt(880,.1,'sine',.15);setTimeout(function(){pt(1100,.15,'sine',.15)},80);setTimeout(function(){pt(1320,.2,'sine',.15)},160)}
+  function cel(){var ns=[523,587,659,698,784,880,988,1047];ns.forEach(function(f,i){setTimeout(function(){pt(f,.15,'sine',.15)},i*80)})}
+  if(document.readyState==='complete')W();else window.addEventListener('load',W);setTimeout(W,500);
+  return{s:s,star:star,cel:cel,gC:gC};
+})();
 buildCats();
 renderGrid();
 </script>
