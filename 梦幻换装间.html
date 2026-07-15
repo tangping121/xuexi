@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎀 梦幻换装间</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FDF2F8,#FFE4EC,#F3E8FF,#EDF2FF);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;user-select:none
+}
+.header{
+  width:100%;padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700;color:#BE185D}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;
+}
+.header-right button:active{transform:scale(.82)}
+
+.character-area{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:4px 16px;
+  position:relative;width:100%;
+}
+.character{
+  width:220px;height:320px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.character .layer{position:absolute;font-size:200px;line-height:1;transition:transform .3s,opacity .3s}
+.character .layer.hair{font-size:160px;top:-30px;z-index:2}
+.character .layer.top{font-size:160px;top:40px;z-index:3}
+.character .layer.bottom{font-size:160px;top:100px;z-index:1}
+.character .layer.shoes{font-size:80px;bottom:0;z-index:1}
+.character .layer.acc{font-size:100px;top:-50px;z-index:4}
+.character .layer.face{font-size:200px;z-index:0}
+.character .layer.magic{font-size:80px;position:absolute;top:-10px;right:-30px;animation:sparkle 1s ease infinite;z-index:5;opacity:.6}
+@keyframes sparkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.6}50%{transform:scale(1.2) rotate(15deg);opacity:1}}
+
+/* Category bar */
+.cat-bar{
+  display:flex;gap:6px;padding:4px 14px;overflow-x:auto;scrollbar-width:none;width:100%;
+}
+.cat-bar::-webkit-scrollbar{display:none}
+.cat-btn{
+  padding:5px 14px;border-radius:99px;border:2px solid #F9A8D4;font-size:12px;font-weight:500;
+  cursor:pointer;white-space:nowrap;background:#fff;color:#BE185D;transition:all .15s;flex-shrink:0;
+}
+.cat-btn:active{transform:scale(.9)}
+.cat-btn.active{background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;border-color:#BE185D}
+
+/* Options */
+.opt-bar{
+  display:flex;gap:6px;padding:6px 14px 8px;overflow-x:auto;scrollbar-width:none;width:100%;
+}
+.opt-bar::-webkit-scrollbar{display:none}
+.opt-btn{
+  width:56px;height:56px;border-radius:14px;border:2.5px solid #F9A8D4;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:28px;background:#fff;transition:all .15s;flex-shrink:0;
+}
+.opt-btn:active{transform:scale(.88)}
+.opt-btn.active{border-color:#BE185D;background:#FDF2F8;box-shadow:0 0 0 2px #F9A8D4}
+
+/* Actions */
+.action-bar{
+  display:flex;gap:8px;padding:4px 14px 16px;
+}
+.action-btn{
+  padding:8px 20px;border-radius:99px;border:none;font-size:13px;font-weight:600;
+  cursor:pointer;transition:transform .15s;
+}
+.action-btn:active{transform:scale(.9)}
+.action-btn.save{background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;box-shadow:0 4px 12px rgba(190,24,93,.2)}
+.action-btn.random{background:#fff;color:#BE185D;border:2px solid #F9A8D4}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎀 梦幻换装间</h1>
+  <div class="header-right">
+    <button id="resetBtn" title="重置">🔄</button>
+  </div>
+</div>
+
+<div class="character-area">
+  <div class="character" id="character">
+    <div class="layer face" id="layerFace">👧</div>
+    <div class="layer hair" id="layerHair">🦰</div>
+    <div class="layer acc" id="layerAcc"></div>
+    <div class="layer top" id="layerTop">👗</div>
+    <div class="layer bottom" id="layerBottom">🩰</div>
+    <div class="layer shoes" id="layerShoes">🥿</div>
+    <div class="layer magic" id="layerMagic">✨</div>
+  </div>
+</div>
+
+<div class="cat-bar" id="catBar"></div>
+<div class="opt-bar" id="optBar"></div>
+<div class="action-bar">
+  <button class="action-btn random" id="randomBtn">🎲 随机搭配</button>
+  <button class="action-btn save" id="saveBtn">📸 拍照保存</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const CATS = [
+  {key:'top',label:'👚 上衣',opts:['👗','🥻','👚','👕','🦺','🧥','👘','👙']},
+  {key:'bottom',label:'🩰 下装',opts:['🩰','👖','🩳','👗','👘','🧶']},
+  {key:'shoes',label:'👟 鞋子',opts:['🥿','👠','👟','👢','👞','🥾','👡','🩴']},
+  {key:'hair',label:'💇 发型',opts:['🦰','🦱','🦳','🦲','👱‍♀️','👩‍🦰','👩‍🦱','👩‍🦳']},
+  {key:'acc',label:'👑 配饰',opts:['👑','🎀','🦋','🌸','⭐','🌈','💎','🪶']},
+];
+let currentCat = CATS[0].key;
+let selections = {top:'👗',bottom:'🩰',shoes:'🥿',hair:'🦰',acc:''};
+
+function buildCats(){
+  const bar=document.getElementById('catBar');
+  CATS.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='cat-btn'+(c.key===currentCat?' active':'');
+    btn.textContent=c.label;
+    btn.onclick=()=>{currentCat=c.key;renderCats();renderOpts()};
+    bar.appendChild(btn);
+  });
+}
+function renderCats(){
+  document.querySelectorAll('.cat-btn').forEach((b,i)=>b.classList.toggle('active',CATS[i].key===currentCat));
+}
+function renderOpts(){
+  const cat=CATS.find(c=>c.key===currentCat);
+  const bar=document.getElementById('optBar');
+  bar.innerHTML=cat.opts.map(o=>`<div class="opt-btn${selections[currentCat]===o?' active':''}" data-opt="${o}">${o}</div>`).join('');
+  bar.querySelectorAll('.opt-btn').forEach(el=>{
+    el.addEventListener('click',()=>{
+      selections[currentCat]=el.dataset.opt;
+      renderOpts();
+      updateCharacter();
+      sparkle();
+    });
+  });
+}
+function updateCharacter(){
+  document.getElementById('layerHair').textContent=selections.hair;
+  document.getElementById('layerTop').textContent=selections.top;
+  document.getElementById('layerBottom').textContent=selections.bottom;
+  document.getElementById('layerShoes').textContent=selections.shoes;
+  document.getElementById('layerAcc').textContent=selections.acc;
+}
+function sparkle(){
+  const m=document.getElementById('layerMagic');
+  m.style.animation='none';void m.offsetWidth;
+  m.style.animation='sparkle .6s ease';
+  setTimeout(()=>m.style.animation='sparkle 1s ease infinite',600);
+}
+
+// Random
+document.getElementById('randomBtn').addEventListener('click',()=>{
+  CATS.forEach(c=>{
+    const opts=c.opts;
+    selections[c.key]=opts[Math.floor(Math.random()*opts.length)];
+  });
+  currentCat=CATS[0].key;
+  renderCats();renderOpts();updateCharacter();
+  showToast('🎲 换好啦！');
+  sparkle();
+});
+// Reset
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  selections={top:'👗',bottom:'🩰',shoes:'🥿',hair:'🦰',acc:''};
+  renderOpts();updateCharacter();showToast('🔄 重置了');
+});
+// Save
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const el=document.getElementById('character');
+  // Create a temporary canvas
+  const c=document.createElement('canvas');c.width=440;c.height=640;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#FFF5F7';ctx.fillRect(0,0,c.width,c.height);
+  ctx.font='400px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('👧',220,280);
+  ctx.font='320px serif';ctx.fillText(selections.hair,220,160);
+  ctx.font='320px serif';ctx.fillText(selections.top,220,370);
+  ctx.font='320px serif';ctx.fillText(selections.bottom,220,490);
+  ctx.font='160px serif';ctx.fillText(selections.shoes,220,560);
+  ctx.font='200px serif';ctx.fillText(selections.acc,220,100);
+  const link=document.createElement('a');
+  link.href=c.toDataURL('image/png');link.download='我的穿搭_'+(new Date().toISOString().slice(0,10))+'.png';link.click();
+  showToast('📸 穿搭照已保存！');
+});
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+buildCats();renderOpts();
+</script>
+</body>
+</html>

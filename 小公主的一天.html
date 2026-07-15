@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🌙 小公主的一天</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(180deg,#1E1B4B 0%,#312E81 30%,#4C1D95 60%,#5B21B6 100%);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;user-select:none;
+  color:#fff;transition:background 1s ease;
+}
+body.morning{background:linear-gradient(180deg,#FDF2F8 0%,#FFE4EC 50%,#F3E8FF 100%);color:#1A1A2E}
+body.afternoon{background:linear-gradient(180deg,#FFF7ED 0%,#FEF3C7 50%,#FDE68A 100%);color:#1A1A2E}
+body.evening{background:linear-gradient(180deg,#FEF3C7 0%,#FDE68A 40%,#F59E0B 100%);color:#1A1A2E}
+body.night{background:linear-gradient(180deg,#1E1B4B 0%,#312E81 50%,#4C1D95 100%);color:#fff}
+
+.header{
+  width:100%;padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700}
+.header-right{display:flex;gap:8px;align-items:center}
+.header-right span{font-size:14px;font-weight:500}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;color:inherit;
+}
+.header-right button:active{transform:scale(.82)}
+
+/* Time indicator */
+.time-indicator{
+  text-align:center;padding:4px 0 2px;font-size:13px;opacity:.7;font-weight:500;
+}
+
+/* Scene */
+.scene-area{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 16px;width:100%;
+}
+.scene-icon{font-size:100px;animation:sceneIn .6s ease}
+@keyframes sceneIn{0%{transform:scale(0) rotate(-10deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.scene-title{font-size:20px;font-weight:600;margin:6px 0 4px}
+.scene-desc{font-size:13px;opacity:.7;text-align:center;margin-bottom:10px}
+
+/* Action */
+.action-btn{
+  padding:14px 40px;border:none;border-radius:99px;font-size:18px;font-weight:700;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+  margin:6px 0;
+}
+.action-btn:active{transform:scale(.9)}
+.action-btn.do{background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;box-shadow:0 4px 16px rgba(190,24,93,.3)}
+.action-btn.done{background:#D1FAE5;color:#065F46;box-shadow:0 4px 12px rgba(52,211,153,.2);pointer-events:none;opacity:.7}
+.action-btn.skip{background:transparent;border:2px solid rgba(255,255,255,.3);color:inherit;font-size:13px;padding:8px 20px}
+
+/* Stars & reward */
+.reward-area{text-align:center;padding:4px 0 12px;font-size:24px;min-height:50px}
+@keyframes starRain{0%{transform:translateY(-20px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.star-rain{display:inline-block;animation:starRain .4s ease}
+
+/* Progress */
+.progress-dots{
+  display:flex;gap:8px;padding:6px 0 4px;
+}
+.dot{
+  width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2);transition:background .3s,transform .3s;
+}
+.dot.done{background:#34D399;transform:scale(1.3)}
+.dot.current{background:#F59E0B;transform:scale(1.5);animation:dotPulse 1s ease infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Confetti */
+#confetti-canvas{position:fixed;inset:0;z-index:300;pointer-events:none}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1 id="titleText">🌙 小公主的一天</h1>
+  <div class="header-right">
+    <span id="starCount">⭐ 0</span>
+    <button id="resetBtn">🔄</button>
+  </div>
+</div>
+<div class="time-indicator" id="timeIndicator">☀️ 早上好！</div>
+
+<div class="progress-dots" id="progressDots"></div>
+
+<div class="scene-area">
+  <div class="scene-icon" id="sceneIcon">🛏️</div>
+  <div class="scene-title" id="sceneTitle">起床啦</div>
+  <div class="scene-desc" id="sceneDesc">太阳公公出来了，小公主该起床了～</div>
+  <button class="action-btn do" id="actionBtn">🌞 起床！</button>
+  <button class="action-btn skip" id="skipBtn">跳过 ➜</button>
+  <div class="reward-area" id="rewardArea"></div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+<script>
+const STEPS = [
+  {icon:'🛏️',title:'起床啦',desc:'太阳公公出来了，小公主该起床了～',action:'🌞 起床！',bg:'morning'},
+  {icon:'🪥',title:'刷牙洗脸',desc:'上下左右刷一刷，牙齿白白没蛀牙！',action:'🪥 刷牙！',bg:'morning'},
+  {icon:'👗',title:'自己穿衣服',desc:'今天想穿什么？自己来搭配吧',action:'👗 穿衣服',bg:'morning'},
+  {icon:'🥛',title:'吃早餐',desc:'牛奶+鸡蛋，吃得饱饱的！',action:'🥛 吃早餐',bg:'morning'},
+  {icon:'📖',title:'读书学习',desc:'学一首古诗、认几个生字',action:'📖 学习啦',bg:'afternoon'},
+  {icon:'🎨',title:'画画玩耍',desc:'画一幅画送给妈妈吧',action:'🎨 画画！',bg:'afternoon'},
+  {icon:'🧸',title:'收拾玩具',desc:'玩具玩完了要送回家哦',action:'🧸 收玩具',bg:'afternoon'},
+  {icon:'🥗',title:'吃晚饭',desc:'不挑食，什么都吃才健康',action:'🥗 吃饭饭',bg:'evening'},
+  {icon:'🛁',title:'洗澡澡',desc:'泡泡浴，洗得香喷喷的',action:'🛁 洗澡！',bg:'evening'},
+  {icon:'📖',title:'睡前故事',desc:'爸爸讲一个睡前故事',action:'📖 听故事',bg:'night'},
+  {icon:'🌙',title:'关灯睡觉',desc:'晚安，小公主，好梦～',action:'🌙 睡觉',bg:'night'},
+];
+
+let currentStep=0;
+let stars=0;
+let completed=false;
+
+function loadState(){
+  try{
+    const s=localStorage.getItem('princess_step');if(s)currentStep=parseInt(s);
+    const st=localStorage.getItem('princess_stars');if(st)stars=parseInt(st);
+  }catch(e){}
+}
+function saveState(){
+  localStorage.setItem('princess_step',currentStep>=STEPS.length?STEPS.length-1:currentStep);
+  localStorage.setItem('princess_stars',String(stars));
+}
+
+function renderStep(){
+  if(currentStep>=STEPS.length){
+    showComplete();return;
+  }
+  const s=STEPS[currentStep];
+  document.getElementById('sceneIcon').textContent=s.icon;
+  document.getElementById('sceneIcon').style.animation='none';void document.getElementById('sceneIcon').offsetWidth;
+  document.getElementById('sceneIcon').style.animation='sceneIn .6s ease';
+  document.getElementById('sceneTitle').textContent=s.title;
+  document.getElementById('sceneDesc').textContent=s.desc;
+  const btn=document.getElementById('actionBtn');
+  btn.textContent=s.action;
+  btn.className='action-btn do';
+  btn.disabled=false;
+  document.getElementById('skipBtn').style.display='block';
+  document.getElementById('rewardArea').innerHTML='';
+  document.body.className=s.bg;
+  document.getElementById('timeIndicator').textContent=getTimeLabel(currentStep);
+  updateDots();
+  updateStars();
+  document.getElementById('titleText').textContent=currentStep<4?'🌤️ 小公主的早晨':currentStep<7?'☀️ 小公主的下午':currentStep<10?'🌅 小公主的晚上':'🌙 小公主晚安';
+}
+
+function getTimeLabel(i){
+  if(i<4)return '☀️ 早上好！';
+  if(i<7)return '🌤️ 下午啦！';
+  if(i<10)return '🌅 傍晚了！';
+  return '🌙 晚安时间～';
+}
+
+function doAction(){
+  if(currentStep>=STEPS.length)return;
+  const btn=document.getElementById('actionBtn');
+  btn.className='action-btn done';
+  btn.textContent='✅ 完成！';
+  document.getElementById('skipBtn').style.display='none';
+  stars++;
+  updateStars();
+  saveState();
+  // Reward
+  const ra=document.getElementById('rewardArea');
+  ra.innerHTML='<span class="star-rain">⭐ +1</span>';
+  document.getElementById('sceneIcon').style.animation='sceneIn .4s ease';
+  if(stars%5===0)showConfetti(40);
+  showToast('⭐ 做得真棒！');
+  setTimeout(()=>{
+    currentStep++;
+    if(currentStep>=STEPS.length)showComplete();
+    else renderStep();
+  },1200);
+}
+
+function skipStep(){
+  if(currentStep>=STEPS.length)return;
+  currentStep++;
+  if(currentStep>=STEPS.length)showComplete();
+  else renderStep();
+}
+
+function showComplete(){
+  document.getElementById('sceneIcon').textContent='🏆';
+  document.getElementById('sceneTitle').textContent='全部完成！🎉';
+  document.getElementById('sceneDesc').textContent='小公主度过了完美的一天，一共获得 '+stars+' 颗⭐！';
+  document.getElementById('actionBtn').style.display='none';
+  document.getElementById('skipBtn').style.display='none';
+  document.getElementById('rewardArea').innerHTML='<span style="font-size:48px">🏆⭐🌟✨</span>';
+  document.body.className='';
+  document.body.style.background='linear-gradient(160deg,#FDF2F8,#FFE4EC,#F3E8FF,#EDF2FF)';
+  document.body.style.color='#1A1A2E';
+  showConfetti(80);
+}
+
+function updateDots(){
+  const bar=document.getElementById('progressDots');
+  bar.innerHTML=STEPS.map((_,i)=>`<div class="dot${i<currentStep?' done':''}${i===currentStep?' current':''}"></div>`).join('');
+}
+function updateStars(){
+  document.getElementById('starCount').textContent='⭐ '+stars;
+}
+
+document.getElementById('actionBtn').addEventListener('click',doAction);
+document.getElementById('skipBtn').addEventListener('click',skipStep);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('确定重新开始吗？')){
+    currentStep=0;stars=0;saveState();renderStep();showToast('🔄 新的一天！');
+  }
+});
+
+function showConfetti(n){
+  const c=document.getElementById('confetti-canvas');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const colors=['#EC4899','#BE185D','#F59E0B','#34D399','#8B5CF6','#3B82F6'];
+  const ps=[];
+  for(let i=0;i<(n||50);i++)ps.push({x:Math.random()*c.width,y:-Math.random()*c.height,w:4+Math.random()*6,h:3+Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],vy:2+Math.random()*3,vx:-1+Math.random()*2,rot:Math.random()*360,rv:-4+Math.random()*8,alpha:1});
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);let alive=false;
+    for(const p of ps){p.x+=p.vx;p.y+=p.vy;p.rot+=p.rv;p.alpha-=0.004;if(p.alpha<=0)continue;alive=true;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore()}
+    if(alive&&frame++<200)requestAnimationFrame(draw);else{ctx.clearRect(0,0,c.width,c.height);c.width=0;c.height=0}
+  }
+  draw();
+}
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+loadState();
+renderStep();
+</script>
+</body>
+</html>

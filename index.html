@@ -38,7 +38,6 @@ body{
   display:inline-block;background:rgba(124,58,237,.1);padding:2px 12px;border-radius:99px;
   font-size:12px;color:#7C3AED;margin-top:4px;
 }
-
 .app-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:10px auto 0;position:relative;z-index:1}
 .app-card{
   background:#fff;border-radius:18px;padding:14px 10px;text-decoration:none;
@@ -47,14 +46,19 @@ body{
   transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;
   animation:cardAppear .5s ease both;
 }
-.app-card:nth-child(1){animation-delay:.05s}
-.app-card:nth-child(2){animation-delay:.1s}
-.app-card:nth-child(3){animation-delay:.15s}
-.app-card:nth-child(4){animation-delay:.2s}
-.app-card:nth-child(5){animation-delay:.25s}
-.app-card:nth-child(6){animation-delay:.3s}
-.app-card:nth-child(7){animation-delay:.35s}
-.app-card:nth-child(8){animation-delay:.4s}
+.app-card:nth-child(1){animation-delay:.025s}
+.app-card:nth-child(2){animation-delay:.05s}
+.app-card:nth-child(3){animation-delay:.075s}
+.app-card:nth-child(4){animation-delay:.1s}
+.app-card:nth-child(5){animation-delay:.125s}
+.app-card:nth-child(6){animation-delay:.15s}
+.app-card:nth-child(7){animation-delay:.175s}
+.app-card:nth-child(8){animation-delay:.2s}
+.app-card:nth-child(9){animation-delay:.225s}
+.app-card:nth-child(10){animation-delay:.25s}
+.app-card:nth-child(11){animation-delay:.275s}
+.app-card:nth-child(12){animation-delay:.3s}
+.app-card:nth-child(13){animation-delay:.325s}
 @keyframes cardAppear{0%{transform:translateY(20px);opacity:0}100%{transform:translateY(0);opacity:1}}
 .app-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(124,58,237,.12)}
 .app-card:active{transform:scale(.94)}
@@ -86,7 +90,7 @@ body{
 <div class="header">
   <h1>🌸 学习乐园</h1>
   <div class="sub"><span class="wave">👋</span> 给爸爸的小公主 · 幼小衔接全科启蒙</div>
-  <div class="count-badge">🎯 8 款学习 App · 持续更新中 ✨</div>
+  <div class="count-badge">🎯 13 款学习 App · 持续更新中 ✨</div>
 </div>
 
 <div class="app-grid">
@@ -144,6 +148,41 @@ body{
     <div class="icon">🧩</div>
     <div class="name">记忆配对</div>
     <div class="desc">翻牌记忆 · 4种主题 · 3种难度</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="梦幻换装间.html">
+    <div class="shine"></div>
+    <div class="icon">🎀</div>
+    <div class="name">梦幻换装间</div>
+    <div class="desc">换发型换裙子 · 搭配拍照 · 女孩最爱</div>
+    <span class="tag hot">🔥热门</span>
+  </a>
+  <a class="app-card" href="冰淇淋小店.html">
+    <div class="shine"></div>
+    <div class="icon">🍦</div>
+    <div class="name">冰淇淋小店</div>
+    <div class="desc">角色扮演 · 做冰淇淋 · 收钱找零</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="小公主的一天.html">
+    <div class="shine"></div>
+    <div class="icon">🌙</div>
+    <div class="name">小公主的一天</div>
+    <div class="desc">日常习惯养成 · 场景变化 · 奖励星星</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="动物马戏团.html">
+    <div class="shine"></div>
+    <div class="icon">🎪</div>
+    <div class="name">动物马戏团</div>
+    <div class="desc">8种动物表演 · 弹跳动画 · 鼓掌欢呼</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="情绪小侦探.html">
+    <div class="shine"></div>
+    <div class="icon">🎭</div>
+    <div class="name">情绪小侦探</div>
+    <div class="desc">14个生活场景 · 识别情绪 · 收集徽章</div>
     <span class="tag new">新</span>
   </a>
 </div>
