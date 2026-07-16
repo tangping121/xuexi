@@ -8,8 +8,8 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   font-family:-apple-system,'PingFang SC',sans-serif;
-  min-height:100vh;min-height:100dvh;padding:16px 16px 40px;
-  overflow-x:hidden;
+  min-height:100vh;min-height:100dvh;padding:12px 12px 16px;
+  overflow:auto;display:flex;flex-direction:column;
 }
 .bg-anim{
   position:fixed;inset:0;z-index:-1;overflow:hidden;
@@ -20,31 +20,36 @@ body{
   animation:float linear infinite;pointer-events:none;
 }
 @keyframes float{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:.15}90%{opacity:.15}100%{transform:translateY(-100px) rotate(720deg);opacity:0}}
-.header{text-align:center;padding:16px 0 6px;position:relative;z-index:1}
+.header{text-align:center;padding:10px 0 4px;position:relative;z-index:1}
 .header h1{
-  font-size:30px;font-weight:700;
+  font-size:26px;font-weight:700;
   background:linear-gradient(135deg,#E83E8C,#7C3AED,#F59E0B,#34D399);
   background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   animation:gradientShift 4s ease infinite;
 }
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .header .sub{
-  font-size:14px;color:#7C3AED;margin-top:2px;opacity:.7;
+  font-size:13px;color:#7C3AED;margin-top:1px;opacity:.7;
   display:flex;align-items:center;justify-content:center;gap:6px;
 }
 .header .sub .wave{display:inline-block;animation:waveAnim 1.5s ease infinite}
 @keyframes waveAnim{0%,100%{transform:rotate(0deg)}50%{transform:rotate(15deg)}}
 .header .count-badge{
-  display:inline-block;background:rgba(124,58,237,.1);padding:2px 12px;border-radius:99px;
-  font-size:12px;color:#7C3AED;margin-top:4px;
+  display:inline-block;background:rgba(124,58,237,.1);padding:1px 10px;border-radius:99px;
+  font-size:11px;color:#7C3AED;margin-top:2px;
 }
-.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:10px auto 0;position:relative;z-index:1}
+.app-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:8px;margin:8px auto 0;position:relative;z-index:1;
+  width:100%;max-width:100%;
+}
 .app-card{
-  background:#fff;border-radius:18px;padding:14px 10px;text-decoration:none;
+  background:#fff;border-radius:16px;padding:12px 8px;text-decoration:none;
   box-shadow:0 4px 16px rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.06);
-  display:flex;flex-direction:column;align-items:center;gap:4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;
-  animation:cardAppear .5s ease both;
+  animation:cardAppear .5s ease both;min-height:110px;
 }
 .app-card:nth-child(1){animation-delay:.025s}
 .app-card:nth-child(2){animation-delay:.05s}
@@ -70,10 +75,10 @@ body{
 @keyframes cardAppear{0%{transform:translateY(20px);opacity:0}100%{transform:translateY(0);opacity:1}}
 .app-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(124,58,237,.12)}
 .app-card:active{transform:scale(.94)}
-.app-card .icon{font-size:36px;line-height:1;transition:transform .3s}
+.app-card .icon{font-size:28px;line-height:1;transition:transform .3s}
 .app-card:hover .icon{transform:scale(1.15) rotate(-5deg)}
-.app-card .name{font-size:14px;font-weight:600;color:#1A1A2E;margin-top:2px}
-.app-card .desc{font-size:10px;color:#6B7280;text-align:center;line-height:1.3}
+.app-card .name{font-size:12px;font-weight:600;color:#1A1A2E;text-align:center;line-height:1.2}
+.app-card .desc{font-size:9px;color:#6B7280;text-align:center;line-height:1.2;max-width:100%;overflow:hidden}
 .tag{
   font-size:9px;padding:1px 8px;border-radius:99px;font-weight:500;margin-top:2px;
 }
@@ -88,9 +93,38 @@ body{
 }
 .app-card:hover .shine{opacity:1}
 
+/* Responsive landscape: fill screen dynamically */
+@media (orientation:landscape) and (max-height:500px){
+  body{padding:6px 10px 8px;gap:0}
+  .header{padding:6px 0 2px}
+  .header h1{font-size:20px}
+  .header .sub{font-size:11px}
+  .header .count-badge{font-size:10px;padding:1px 8px}
+  .app-grid{gap:5px;margin:4px auto 0;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .app-card{min-height:80px;padding:8px 4px;border-radius:12px}
+  .app-card .icon{font-size:22px}
+  .app-card .name{font-size:11px}
+  .app-card .desc{font-size:8px}
+  .badge-section{margin-top:6px}
+  .badge-item{width:30px;height:30px;font-size:14px}
+  .footer{font-size:13px;margin-top:6px}
+}
+@media (orientation:landscape) and (min-height:501px){
+  .app-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+}
+/* On wider screens use more columns */
+@media (min-width:768px){
+  .app-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-width:100%}
+}
+@media (min-width:1024px){
+  .app-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .app-card{min-height:120px}
+  .app-card .icon{font-size:32px}
+}
+
 /* Badge section */
 .badge-section{
-  max-width:480px;margin:14px auto 0;padding:0 4px;position:relative;z-index:1;
+  max-width:100%;margin:10px auto 0;padding:0 4px;position:relative;z-index:1;
 }
 .badge-title{
   font-size:13px;font-weight:600;color:#7C3AED;margin-bottom:6px;display:flex;align-items:center;gap:4px;
