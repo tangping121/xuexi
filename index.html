@@ -62,6 +62,8 @@ body{
 .app-card:nth-child(14){animation-delay:.35s}
 .app-card:nth-child(15){animation-delay:.375s}
 .app-card:nth-child(16){animation-delay:.4s}
+.app-card:nth-child(17){animation-delay:.425s}
+.app-card:nth-child(18){animation-delay:.45s}
 @keyframes cardAppear{0%{transform:translateY(20px);opacity:0}100%{transform:translateY(0);opacity:1}}
 .app-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(124,58,237,.12)}
 .app-card:active{transform:scale(.94)}
@@ -109,7 +111,7 @@ body{
 <div class="header">
   <h1>🌸 学习乐园</h1>
   <div class="sub"><span class="wave">👋</span> 给爸爸的小公主 · 幼小衔接全科启蒙</div>
-  <div class="count-badge">🎯 16 款学习 App · 持续更新中 ✨</div>
+  <div class="count-badge">🎯 18 款学习 App · 持续更新中 ✨</div>
 </div>
 
 <div class="app-grid">
@@ -225,6 +227,20 @@ body{
     <div class="desc">20个基础字 · 指尖描摹 · 语音朗读</div>
     <span class="tag new">新</span>
   </a>
+  <a class="app-card" href="儿歌播放器.html">
+    <div class="shine"></div>
+    <div class="icon">🎵</div>
+    <div class="name">儿歌播放器</div>
+    <div class="desc">5首经典儿歌 · 自动播放 · 歌词同步</div>
+    <span class="tag new">新</span>
+  </a>
+  <a class="app-card" href="找不同.html">
+    <div class="shine"></div>
+    <div class="icon">🔎</div>
+    <div class="name">找不同</div>
+    <div class="desc">5关谜题 · 卡通主题 · 眼力挑战</div>
+    <span class="tag new">新</span>
+  </a>
 </div>
 
 <!-- Achievements -->
@@ -269,6 +285,8 @@ body{
     {icon:'🎭',name:'情商小天使',desc:'集齐情绪徽章'},
     {icon:'🕐',name:'时间管理家',desc:'答对时钟测验'},
     {icon:'✏️',name:'书法小能手',desc:'写完描红本'},
+    {icon:'🎵',name:'小歌唱家',desc:'听完所有儿歌'},
+    {icon:'👀',name:'火眼金睛',desc:'通关所有找不同'},
   ];
   var unlocked=[];try{var s=localStorage.getItem('xuexi_badges');if(s)unlocked=JSON.parse(s)}catch(e){}
   function renderBadges(){

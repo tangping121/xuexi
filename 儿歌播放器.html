@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎵 儿歌播放器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FDF2F8,#F3E8FF,#FFE4EC);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;user-select:none;
+}
+.header{
+  padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700;color:#BE185D}
+.header-right span{font-size:14px;color:#BE185D;font-weight:500}
+
+/* Player */
+.player-area{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 16px;
+}
+.anim-area{
+  width:200px;height:200px;border-radius:50%;background:linear-gradient(135deg,#FDF2F8,#FFE4EC);
+  display:flex;align-items:center;justify-content:center;font-size:100px;
+  box-shadow:0 8px 32px rgba(190,24,93,.1);margin-bottom:10px;
+  position:relative;overflow:hidden;transition:transform .3s;
+}
+.anim-area.playing{animation:discSpin 4s linear infinite}
+@keyframes discSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.anim-ring{
+  position:absolute;width:180px;height:180px;border-radius:50%;
+  border:2px dashed rgba(190,24,93,.15);animation:ringPulse 2s ease infinite;
+}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.05);opacity:1}}
+
+.song-title{font-size:22px;font-weight:700;color:#1A1A2E;margin:4px 0}
+.song-sub{font-size:13px;color:#BE185D;opacity:.7;margin-bottom:8px}
+
+/* Lyrics */
+.lyrics-box{
+  background:#fff;border-radius:20px;padding:16px 20px;width:100%;max-width:360px;
+  min-height:80px;text-align:center;box-shadow:0 4px 16px rgba(190,24,93,.06);
+  margin-bottom:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.lyric-line{font-size:18px;font-weight:500;color:#1A1A2E;line-height:1.8}
+.lyric-line.active{color:#BE185D;animation:lyricPop .3s ease}
+@keyframes lyricPop{0%{transform:scale(.92)}100%{transform:scale(1)}}
+.lyric-line.next{font-size:14px;color:#9CA3AF}
+
+/* Controls */
+.controls{
+  display:flex;align-items:center;gap:16px;margin:6px 0 8px;
+}
+.ctrl-btn{
+  width:52px;height:52px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;
+  font-size:24px;cursor:pointer;transition:transform .15s;
+  background:#fff;box-shadow:0 4px 12px rgba(190,24,93,.1);color:#BE185D;
+}
+.ctrl-btn:active{transform:scale(.85)}
+.ctrl-btn.play{width:64px;height:64px;font-size:28px;background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;box-shadow:0 4px 16px rgba(190,24,93,.25)}
+
+/* Progress */
+.progress-bar{
+  width:100%;max-width:360px;height:6px;background:#F9A8D4;border-radius:99px;overflow:hidden;margin:4px 0 2px;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,#EC4899,#BE185D);border-radius:99px;transition:width .2s;
+}
+
+/* Song list */
+.song-list{
+  display:flex;gap:6px;padding:4px 14px 10px;overflow-x:auto;scrollbar-width:none;width:100%;
+}
+.song-list::-webkit-scrollbar{display:none}
+.song-item{
+  padding:5px 14px;border-radius:99px;border:2px solid #F9A8D4;font-size:12px;font-weight:500;
+  cursor:pointer;white-space:nowrap;background:#fff;color:#BE185D;transition:all .15s;flex-shrink:0;
+}
+.song-item:active{transform:scale(.9)}
+.song-item.active{background:linear-gradient(135deg,#EC4899,#BE185D);color:#fff;border-color:#BE185D}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎵 儿歌播放器</h1>
+  <div class="header-right"><span id="statusDisplay">▶️ 准备播放</span></div>
+</div>
+
+<div class="song-list" id="songList"></div>
+
+<div class="player-area">
+  <div class="anim-area" id="animArea">
+    <div class="anim-ring"></div>
+    <span id="animEmoji">🐱</span>
+  </div>
+  <div class="song-title" id="songTitle">两只老虎</div>
+  <div class="song-sub" id="songSub">经典儿歌</div>
+
+  <div class="lyrics-box"><div id="lyricCurrent" class="lyric-line">两只老虎，两只老虎</div><div id="lyricNext" class="lyric-line next">跑得快，跑得快</div></div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="prevBtn">⏮</button>
+    <button class="ctrl-btn play" id="playBtn">▶️</button>
+    <button class="ctrl-btn" id="nextBtn">⏭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const SONGS = [
+  {
+    title:'两只老虎',emoji:'🐱',sub:'经典儿歌',
+    lyrics:[
+      '两只老虎，两只老虎','跑得快，跑得快',
+      '一只没有眼睛','一只没有尾巴','真奇怪，真奇怪',
+    ],
+    notes:[523,523,587,587,659,659,587, 523,523,587,587,659,659,587, 659,698,784,784,698,659,587,523, 659,698,784,784,698,659,587,523, 523,392,523, 523,392,523],
+    bpm:200,
+  },
+  {
+    title:'小星星',emoji:'⭐',sub:'经典儿歌',
+    lyrics:[
+      '一闪一闪亮晶晶','满天都是小星星',
+      '挂在天上放光明','好像许多小眼睛',
+      '一闪一闪亮晶晶','满天都是小星星',
+    ],
+    notes:[523,523,784,784,880,880,784, 698,698,659,659,587,587,523, 784,784,698,698,659,659,587, 784,784,698,698,659,659,587, 523,523,784,784,880,880,784, 698,698,659,659,587,587,523],
+    bpm:220,
+  },
+  {
+    title:'小燕子',emoji:'🐦',sub:'经典儿歌',
+    lyrics:[
+      '小燕子，穿花衣','年年春天来这里',
+      '我问燕子你为啥来','燕子说，这里的春天最美丽',
+      '小燕子，告诉你','今年这里更美丽',
+    ],
+    notes:[523,587,659,698,784,698,659, 587,523,587,659,587,523, 784,880,1047,880,784,698,659, 587,523,587,659,698,784,698,659, 587,523,587,659,587,523],
+    bpm:190,
+  },
+  {
+    title:'小毛驴',emoji:'🐴',sub:'经典儿歌',
+    lyrics:[
+      '我有一只小毛驴','我从来也不骑',
+      '有一天我心血来潮','骑着去赶集',
+      '我手里拿着小皮鞭','我心里真得意',
+      '不知怎么哗啦啦啦','我摔了一身泥',
+    ],
+    notes:[784,784,784,784, 698,698,698, 659,659,659,659, 587,587,587, 784,784,784,784, 698,698,698, 659,659,659,587, 587,587,587],
+    bpm:210,
+  },
+  {
+    title:'世上只有妈妈好',emoji:'❤️',sub:'经典儿歌',
+    lyrics:[
+      '世上只有妈妈好','有妈的孩子像块宝',
+      '投进妈妈的怀抱','幸福享不了',
+      '世上只有妈妈好','没妈的孩子像根草',
+      '离开妈妈的怀抱','幸福哪里找',
+    ],
+    notes:[523,587,659,587, 523,587,659, 784,880,784,698,659,587, 523,587,659,587, 523,587,659, 784,880,784,698,659,587, 523],
+    bpm:180,
+  },
+];
+
+let currentSong=0;
+let isPlaying=false;
+let progress=0;
+let progressTimer=null;
+let noteIdx=0;
+let noteTimer=null;
+
+function buildList(){
+  const bar=document.getElementById('songList');
+  SONGS.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    btn.className='song-item'+(i===currentSong?' active':'');
+    btn.textContent=s.emoji+' '+s.title;
+    btn.onclick=()=>selectSong(i);
+    bar.appendChild(btn);
+  });
+}
+
+function selectSong(idx){
+  stopPlaying();
+  currentSong=idx;
+  document.querySelectorAll('.song-item').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  renderSong();
+}
+
+function renderSong(){
+  const s=SONGS[currentSong];
+  document.getElementById('songTitle').textContent=s.title;
+  document.getElementById('songSub').textContent=s.sub;
+  document.getElementById('animEmoji').textContent=s.emoji;
+  updateLyrics(0);
+  document.getElementById('progressFill').style.width='0%';
+  document.getElementById('statusDisplay').textContent='🎵 '+s.title;
+}
+
+function updateLyrics(idx){
+  const s=SONGS[currentSong];
+  document.getElementById('lyricCurrent').textContent=s.lyrics[idx]||'';
+  document.getElementById('lyricCurrent').className='lyric-line active';
+  document.getElementById('lyricNext').textContent=s.lyrics[idx+1]||'🎵 ~';
+  document.getElementById('lyricNext').className='lyric-line next';
+}
+
+function togglePlay(){
+  if(isPlaying){pausePlaying();return}
+  startPlaying();
+}
+
+function startPlaying(){
+  if(isPlaying)return;
+  isPlaying=true;
+  document.getElementById('playBtn').textContent='⏸️';
+  document.getElementById('animArea').classList.add('playing');
+  document.getElementById('statusDisplay').textContent='▶️ 播放中';
+
+  const s=SONGS[currentSong];
+  noteIdx=0;
+  progress=0;
+
+  function playNextNote(){
+    if(noteIdx>=s.notes.length||!isPlaying){
+      pausePlaying();
+      // Auto next
+      setTimeout(()=>nextSong(),800);
+      return;
+    }
+    // Play note
+    try{
+      var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.type='triangle';
+      o.frequency.setValueAtTime(s.notes[noteIdx],c.currentTime);
+      g.gain.setValueAtTime(.15,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.18);
+      o.start();o.stop(c.currentTime+.2);
+    }catch(e){}
+
+    // Update progress
+    progress=(noteIdx+1)/s.notes.length*100;
+    document.getElementById('progressFill').style.width=progress+'%';
+
+    // Update lyrics
+    var lyIdx=Math.floor(noteIdx/Math.ceil(s.notes.length/s.lyrics.length));
+    if(lyIdx>=s.lyrics.length)lyIdx=s.lyrics.length-1;
+    updateLyrics(lyIdx);
+
+    noteIdx++;
+    noteTimer=setTimeout(playNextNote,60000/s.bpm);
+  }
+  playNextNote();
+}
+
+function pausePlaying(){
+  isPlaying=false;
+  document.getElementById('playBtn').textContent='▶️';
+  document.getElementById('animArea').classList.remove('playing');
+  document.getElementById('statusDisplay').textContent='⏸️ 暂停';
+  if(noteTimer){clearTimeout(noteTimer);noteTimer=null}
+}
+
+function stopPlaying(){
+  pausePlaying();
+  progress=0;
+  document.getElementById('progressFill').style.width='0%';
+  renderSong();
+}
+
+function prevSong(){
+  stopPlaying();
+  currentSong=(currentSong-1+SONGS.length)%SONGS.length;
+  document.querySelectorAll('.song-item').forEach((b,i)=>b.classList.toggle('active',i===currentSong));
+  renderSong();
+}
+
+function nextSong(){
+  stopPlaying();
+  currentSong=(currentSong+1)%SONGS.length;
+  document.querySelectorAll('.song-item').forEach((b,i)=>b.classList.toggle('active',i===currentSong));
+  renderSong();
+}
+
+document.getElementById('playBtn').addEventListener('click',togglePlay);
+document.getElementById('prevBtn').addEventListener('click',prevSong);
+document.getElementById('nextBtn').addEventListener('click',nextSong);
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+buildList();
+renderSong();
+</script>
+</body>
+</html>
