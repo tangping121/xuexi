@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>✏️ 描红写字</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;
+  background:linear-gradient(160deg,#FEFCE8,#FFF7ED,#FEF3C7);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;user-select:none;
+}
+.header{
+  padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700;color:#92400E}
+.header-right{display:flex;gap:8px;align-items:center}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;
+}
+.header-right button:active{transform:scale(.82)}
+.header-right span{font-size:14px;font-weight:600;color:#D97706}
+
+/* Char display */
+.char-header{
+  text-align:center;padding:4px 0 2px;
+}
+.char-display{font-size:60px;font-weight:700;color:#1A1A2E;letter-spacing:4px}
+.char-pinyin{font-size:16px;color:#D97706;font-weight:500;margin-top:-2px}
+.char-words{font-size:12px;color:#6B7280;margin-top:2px}
+
+/* Canvas writing area */
+.canvas-wrap{
+  flex:1;margin:4px 16px 4px;border-radius:20px;overflow:hidden;
+  background:#fff;box-shadow:0 4px 20px rgba(217,119,6,.08);position:relative;
+}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+
+/* Controls */
+.controls{
+  display:flex;gap:6px;padding:4px 14px;flex-wrap:wrap;justify-content:center;
+}
+.ctrl-btn{
+  padding:6px 16px;border-radius:99px;border:2px solid #FDE68A;
+  font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#92400E;
+  transition:all .15s;
+}
+.ctrl-btn:active{transform:scale(.9)}
+.ctrl-btn.primary{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-color:#D97706}
+
+/* Preview panel */
+.preview-bar{
+  display:flex;gap:8px;padding:6px 14px 12px;overflow-x:auto;scrollbar-width:none;
+}
+.preview-bar::-webkit-scrollbar{display:none}
+.preview-char{
+  width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:600;cursor:pointer;background:#fff;border:2px solid #FDE68A;
+  color:#92400E;transition:all .15s;flex-shrink:0;
+}
+.preview-char:active{transform:scale(.88)}
+.preview-char.active{border-color:#D97706;background:#FEF3C7}
+.preview-char.done{background:#D1FAE5;border-color:#34D399;color:#065F46}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>✏️ 描红写字</h1>
+  <div class="header-right">
+    <span id="scoreDisplay">⭐ 0</span>
+    <button id="nextBtn">▶</button>
+  </div>
+</div>
+
+<div class="char-header">
+  <div class="char-display" id="charDisplay">大</div>
+  <div class="char-pinyin" id="charPinyin">dà</div>
+  <div class="char-words" id="charWords">大人 · 大小</div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" id="clearBtn">🗑️ 清空</button>
+  <button class="ctrl-btn" id="hintBtn">👁️ 提示</button>
+  <button class="ctrl-btn" id="speakBtn">🔊 朗读</button>
+  <button class="ctrl-btn" id="prevBtn">◀ 上一个</button>
+  <button class="ctrl-btn primary" id="nextBtn2">下一个 ▶</button>
+</div>
+
+<div class="preview-bar" id="previewBar"></div>
+<div class="toast" id="toast"></div>
+<script>
+const CHARS = [
+  {char:'大',pinyin:'dà',words:'大人 · 大小 · 大家'},
+  {char:'小',pinyin:'xiǎo',words:'小孩 · 小猫 · 小心'},
+  {char:'人',pinyin:'rén',words:'大人 · 人们 · 好人'},
+  {char:'天',pinyin:'tiān',words:'天空 · 今天 · 明天'},
+  {char:'上',pinyin:'shàng',words:'上面 · 上学 · 上午'},
+  {char:'下',pinyin:'xià',words:'下面 · 下午 · 下雨'},
+  {char:'山',pinyin:'shān',words:'大山 · 上山 · 山水'},
+  {char:'水',pinyin:'shuǐ',words:'水果 · 喝水 · 河水'},
+  {char:'火',pinyin:'huǒ',words:'大火 · 火花 · 火车'},
+  {char:'日',pinyin:'rì',words:'日子 · 太阳 · 生日'},
+  {char:'月',pinyin:'yuè',words:'月亮 · 月光 · 一月'},
+  {char:'花',pinyin:'huā',words:'花朵 · 开花 · 花园'},
+  {char:'鸟',pinyin:'niǎo',words:'小鸟 · 鸟窝 · 飞鸟'},
+  {char:'鱼',pinyin:'yú',words:'金鱼 · 小鱼 · 钓鱼'},
+  {char:'马',pinyin:'mǎ',words:'小马 · 马上 · 马路'},
+  {char:'牛',pinyin:'niú',words:'水牛 · 牛奶 · 放牛'},
+  {char:'云',pinyin:'yún',words:'白云 · 乌云 · 云朵'},
+  {char:'风',pinyin:'fēng',words:'大风 · 风车 · 春风'},
+  {char:'田',pinyin:'tián',words:'田地 · 种田 · 田园'},
+  {char:'木',pinyin:'mù',words:'木头 · 树木 · 木门'},
+];
+
+let currentIdx=0;
+let score=0;
+let doneChars=new Set();
+
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+let isDrawing=false;
+let lastX=0,lastY=0;
+let showHint=true;
+
+function resizeCanvas(){
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth*window.devicePixelRatio;
+  canvas.height=wrap.clientHeight*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  canvas.style.width=wrap.clientWidth+'px';
+  canvas.style.height=wrap.clientHeight+'px';
+  ctx.lineCap='round';ctx.lineJoin='round';
+  drawChar();
+}
+window.addEventListener('resize',resizeCanvas);
+
+function drawChar(){
+  const w=canvas.width/window.devicePixelRatio;
+  const h=canvas.height/window.devicePixelRatio;
+  ctx.clearRect(0,0,w,h);
+  // Grid background
+  ctx.strokeStyle='#FEF3C7';ctx.lineWidth=1;
+  ctx.strokeRect(20,20,w-40,h-40);
+  ctx.strokeRect(w/2-2,20,4,h-40);
+  ctx.strokeRect(20,h/2-2,w-40,4);
+  // Hint text (faded character)
+  if(showHint){
+    const c=CHARS[currentIdx];
+    ctx.fillStyle='rgba(217,119,6,.12)';
+    ctx.font=`${h*.55}px 'Noto Sans SC','PingFang SC',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(c.char,w/2,h/2+4);
+  }
+  // Update header
+  const c=CHARS[currentIdx];
+  document.getElementById('charDisplay').textContent=c.char;
+  document.getElementById('charPinyin').textContent=c.pinyin;
+  document.getElementById('charWords').textContent=c.words;
+  updatePreview();
+}
+
+function getPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return {x:t.clientX-rect.left,y:t.clientY-rect.top};
+}
+function startDraw(e){e.preventDefault();const p=getPos(e);lastX=p.x;lastY=p.y;isDrawing=true}
+function doDraw(e){if(!isDrawing)return;e.preventDefault();const p=getPos(e);ctx.strokeStyle='#92400E';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();lastX=p.x;lastY=p.y}
+function stopDraw(e){e.preventDefault();if(isDrawing){isDrawing=false;checkDone()}}
+canvas.addEventListener('mousedown',startDraw);
+canvas.addEventListener('mousemove',doDraw);
+canvas.addEventListener('mouseup',stopDraw);
+canvas.addEventListener('mouseleave',stopDraw);
+canvas.addEventListener('touchstart',startDraw,{passive:false});
+canvas.addEventListener('touchmove',doDraw,{passive:false});
+canvas.addEventListener('touchend',stopDraw,{passive:false});
+
+function checkDone(){
+  const w=canvas.width/window.devicePixelRatio;
+  const h=canvas.height/window.devicePixelRatio;
+  const imgData=ctx.getImageData(0,0,w,h);
+  let drawn=0;
+  for(let i=3;i<imgData.data.length;i+=4){if(imgData.data[i]>0)drawn++;}
+  const total=w*h;
+  const ratio=drawn/total;
+  if(ratio>.08&&!doneChars.has(currentIdx)){
+    doneChars.add(currentIdx);
+    score++;
+    document.getElementById('scoreDisplay').textContent='⭐ '+score;
+    showToast('✏️ 写得好！⭐+1');
+    updatePreview();
+    try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(880,c.currentTime);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o.start();o.stop(c.currentTime+.15);setTimeout(function(){var o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(c.destination);o2.type='sine';o2.frequency.setValueAtTime(1100,c.currentTime);g2.gain.setValueAtTime(.2,c.currentTime);g2.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o2.start();o2.stop(c.currentTime+.15)},80)}catch(e){}
+  }
+}
+
+function clearCanvas(){
+  const w=canvas.width/window.devicePixelRatio;
+  const h=canvas.height/window.devicePixelRatio;
+  ctx.clearRect(0,0,w,h);
+  drawChar();
+}
+
+function goNext(){
+  currentIdx=(currentIdx+1)%CHARS.length;
+  clearCanvas();
+}
+function goPrev(){
+  currentIdx=(currentIdx-1+CHARS.length)%CHARS.length;
+  clearCanvas();
+}
+
+// ── Preview bar ──
+function buildPreview(){
+  const bar=document.getElementById('previewBar');
+  bar.innerHTML=CHARS.map((c,i)=>`<div class="preview-char${i===currentIdx?' active':''}${doneChars.has(i)?' done':''}" data-idx="${i}">${c.char}</div>`).join('');
+  bar.querySelectorAll('.preview-char').forEach(el=>{
+    el.addEventListener('click',()=>{
+      currentIdx=parseInt(el.dataset.idx);
+      clearCanvas();
+    });
+  });
+}
+function updatePreview(){
+  document.querySelectorAll('.preview-char').forEach((el,i)=>{
+    el.classList.toggle('active',i===currentIdx);
+    el.classList.toggle('done',doneChars.has(i));
+  });
+  document.getElementById('scoreDisplay').textContent='⭐ '+score;
+}
+
+// ── Events ──
+document.getElementById('clearBtn').addEventListener('click',clearCanvas);
+document.getElementById('hintBtn').addEventListener('click',()=>{showHint=!showHint;drawChar();showToast(showHint?'👁️ 显示提示':'👁️ 隐藏提示')});
+document.getElementById('speakBtn').addEventListener('click',()=>{
+  const c=CHARS[currentIdx];
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(c.char);
+  u.lang='zh-CN';u.rate=.8;u.pitch=1;
+  window.speechSynthesis.speak(u);
+});
+document.getElementById('nextBtn').addEventListener('click',goNext);
+document.getElementById('nextBtn2').addEventListener('click',goNext);
+document.getElementById('prevBtn').addEventListener('click',goPrev);
+
+// Keyboard
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')goNext();if(e.key==='ArrowLeft')goPrev();if(e.key==='c')clearCanvas()});
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// Init
+buildPreview();
+setTimeout(resizeCanvas,100);
+</script>
+</body>
+</html>
