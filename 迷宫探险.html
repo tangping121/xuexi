@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🧭 迷宫探险</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,'PingFang SC',sans-serif;
+  background:linear-gradient(160deg,#FFF7ED,#FEF3C7,#FDE68A);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;user-select:none;
+}
+.header{
+  padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:20px;font-weight:700;color:#92400E}
+.header-right{display:flex;gap:8px;align-items:center}
+.header-right span{font-size:14px;font-weight:600;color:#D97706}
+.header-right button{
+  background:none;border:none;font-size:18px;cursor:pointer;padding:4px;transition:transform .2s;
+}
+.header-right button:active{transform:scale(.82)}
+
+.level-bar{
+  display:flex;align-items:center;justify-content:center;gap:10px;padding:2px 0;
+}
+.level-text{font-size:13px;color:#92400E;font-weight:500}
+.stars{font-size:18px}
+
+/* Maze canvas */
+.maze-wrap{
+  flex:1;margin:4px 12px 4px;border-radius:20px;overflow:hidden;
+  background:#fff;box-shadow:0 4px 20px rgba(217,119,6,.08);position:relative;
+}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+
+/* Controls */
+.controls{
+  display:flex;gap:8px;padding:4px 14px 10px;justify-content:center;
+}
+.ctrl-btn{
+  padding:8px 20px;border-radius:99px;border:2px solid #FDE68A;font-size:13px;font-weight:600;
+  cursor:pointer;background:#fff;color:#92400E;transition:all .15s;
+}
+.ctrl-btn:active{transform:scale(.9)}
+.ctrl-btn.primary{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-color:#D97706}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;
+  padding:8px 20px;border-radius:99px;font-size:13px;z-index:200;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🧭 迷宫探险</h1>
+  <div class="header-right">
+    <span id="scoreDisplay">⭐ 0</span>
+    <button id="resetBtn">🔄</button>
+  </div>
+</div>
+<div class="level-bar">
+  <button id="prevBtn" style="background:none;border:none;font-size:16px;cursor:pointer;color:#92400E">◀</button>
+  <span class="level-text" id="levelText">第 1 关</span>
+  <span class="stars" id="starsDisplay"></span>
+  <button id="nextBtn" style="background:none;border:none;font-size:16px;cursor:pointer;color:#92400E">▶</button>
+</div>
+
+<div class="maze-wrap">
+  <canvas id="mazeCanvas"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" id="clearPathBtn">🗑️ 清空路线</button>
+  <button class="ctrl-btn primary" id="checkBtn">✅ 完成过关</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const LEVELS = [
+  // 0: 简单5x5
+  {rows:5,cols:5,walls:[[1,0,1,2],[2,3,3,3],[3,1,4,1],[0,2,0,3],[2,2,4,2],[1,4,2,4]],start:[0,0],end:[4,4],emojiS:'🐱',emojiE:'🐟'},
+  // 1: 5x5
+  {rows:5,cols:5,walls:[[0,2,1,2],[1,0,1,1],[2,1,3,1],[3,2,4,2],[4,0,4,1],[1,3,3,3],[0,4,1,4],[3,4,4,4]],start:[0,0],end:[4,4],emojiS:'🐰',emojiE:'🥕'},
+  // 2: 6x6
+  {rows:6,cols:6,walls:[[0,2,1,2],[1,0,1,1],[2,1,3,1],[3,2,4,2],[4,3,5,3],[1,3,2,3],[2,4,3,4],[4,1,5,1],[0,4,1,4],[3,0,4,0],[3,5,4,5]],start:[0,0],end:[5,5],emojiS:'🐻',emojiE:'🍯'},
+  // 3: 6x6
+  {rows:6,cols:6,walls:[[0,3,1,3],[1,1,2,1],[2,0,3,0],[3,2,4,2],[4,3,5,3],[1,4,2,4],[2,5,3,5],[4,0,5,0],[0,1,0,2],[2,2,2,3],[3,4,4,4],[1,0,1,1],[5,1,5,2]],start:[0,0],end:[5,5],emojiS:'🐼',emojiE:'🎋'},
+  // 4: 7x7
+  {rows:7,cols:7,walls:[[0,2,1,2],[1,0,2,0],[2,1,3,1],[3,2,4,2],[4,3,5,3],[5,4,6,4],[1,3,2,3],[2,4,3,4],[3,5,4,5],[4,0,5,0],[0,4,1,4],[5,1,6,1],[0,5,1,5],[2,6,3,6],[4,6,5,6],[1,1,1,2],[3,0,3,1],[5,2,5,3],[6,2,6,3]],start:[0,0],end:[6,6],emojiS:'🦊',emojiE:'🍇'},
+];
+
+let currentLevel=0;
+let score=0;
+let completed=new Set();
+let pathDrawn=false;
+
+const canvas=document.getElementById('mazeCanvas');
+const ctx=canvas.getContext('2d');
+let isDrawing=false;
+let mazeData=null;
+
+function resizeCanvas(){
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth*window.devicePixelRatio;
+  canvas.height=wrap.clientHeight*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  canvas.style.width=wrap.clientWidth+'px';
+  canvas.style.height=wrap.clientHeight+'px';
+  drawMaze();
+}
+window.addEventListener('resize',resizeCanvas);
+
+function genMaze(level){
+  const l=LEVELS[level];
+  const grid=Array(l.rows).fill().map(()=>Array(l.cols).fill().map(()=>({top:true,right:true,bottom:true,left:true,visited:false})));
+  
+  // Apply walls
+  l.walls.forEach(w=>{
+    const [r1,c1,r2,c2]=w;
+    if(r1===r2){// horizontal
+      if(c1<c2){grid[r1][c1].right=false;grid[r2][c2].left=false}
+      else{grid[r1][c1].left=false;grid[r2][c2].right=false}
+    }else{// vertical
+      if(r1<r2){grid[r1][c1].bottom=false;grid[r2][c2].top=false}
+      else{grid[r1][c1].top=false;grid[r2][c2].bottom=false}
+    }
+  });
+  
+  // Mark start and end
+  grid[l.start[0]][l.start[1]].isStart=true;
+  grid[l.end[0]][l.end[1]].isEnd=true;
+  return {grid,level:l};
+}
+
+function drawMaze(){
+  const w=canvas.width/window.devicePixelRatio;
+  const h=canvas.height/window.devicePixelRatio;
+  ctx.clearRect(0,0,w,h);
+  
+  if(!mazeData)return;
+  const l=mazeData.level;
+  const cellW=(w-40)/l.cols;
+  const cellH=(h-40)/l.rows;
+  const ox=20,oy=20;
+  
+  // Draw cells
+  for(let r=0;r<l.rows;r++){
+    for(let c=0;c<l.cols;c++){
+      const cell=mazeData.grid[r][c];
+      const x=ox+c*cellW,y=oy+r*cellH;
+      // Cell bg
+      if(cell.isStart){ctx.fillStyle='#D1FAE5';ctx.fillRect(x,y,cellW,cellH)}
+      else if(cell.isEnd){ctx.fillStyle='#FEF3C7';ctx.fillRect(x,y,cellW,cellH)}
+      
+      // Walls
+      ctx.strokeStyle='#92400E';ctx.lineWidth=3;
+      if(cell.top)ctx.strokeRect(x,y,cellW,0);
+      else{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+cellW,y);ctx.stroke()}
+      if(!cell.top){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+cellW,y);ctx.strokeStyle='#E5E7EB';ctx.lineWidth=1;ctx.stroke()}
+    }
+  }
+  
+  // Draw all walls properly
+  ctx.strokeStyle='#92400E';ctx.lineWidth=3;
+  for(let r=0;r<l.rows;r++){
+    for(let c=0;c<l.cols;c++){
+      const cell=mazeData.grid[r][c];
+      const x=ox+c*cellW,y=oy+r*cellH;
+      if(cell.top){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+cellW,y);ctx.stroke()}
+      if(cell.left){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+cellH);ctx.stroke()}
+      if(r===l.rows-1&&cell.bottom){ctx.beginPath();ctx.moveTo(x,y+cellH);ctx.lineTo(x+cellW,y+cellH);ctx.stroke()}
+      if(c===l.cols-1&&cell.right){ctx.beginPath();ctx.moveTo(x+cellW,y);ctx.lineTo(x+cellW,y+cellH);ctx.stroke()}
+    }
+  }
+  
+  // Draw start/end emojis
+  ctx.font=Math.min(cellW,cellH)*.7+'px serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(l.emojiS,ox+l.start[1]*cellW+cellW/2,oy+l.start[0]*cellH+cellH/2);
+  ctx.fillText(l.emojiE,ox+l.end[1]*cellW+cellW/2,oy+l.end[0]*cellH+cellH/2);
+}
+
+// ── Drawing path ──
+function getCell(x,y){
+  const w=canvas.width/window.devicePixelRatio;
+  const h=canvas.height/window.devicePixelRatio;
+  if(!mazeData)return null;
+  const l=mazeData.level;
+  const cellW=(w-40)/l.cols,cellH=(h-40)/l.rows;
+  const c=Math.floor((x-20)/cellW),r=Math.floor((y-20)/cellH);
+  if(r>=0&&r<l.rows&&c>=0&&c<l.cols)return{r,c};
+  return null;
+}
+
+function startPath(e){
+  e.preventDefault();isDrawing=true;
+  const rect=canvas.getBoundingClientRect();
+  const p=e.touches?{x:e.touches[0].clientX-rect.left,y:e.touches[0].clientY-rect.top}:{x:e.clientX-rect.left,y:e.clientY-rect.top};
+  const cell=getCell(p.x,p.y);
+  if(cell&&cell.r===mazeData.level.start[0]&&cell.c===mazeData.level.start[1]){
+    ctx.beginPath();ctx.strokeStyle='#6366F1';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';
+    const w=canvas.width/window.devicePixelRatio,h=canvas.height/window.devicePixelRatio;
+    const l=mazeData.level;
+    const cellW=(w-40)/l.cols,cellH=(h-40)/l.rows;
+    ctx.moveTo(20+cell.c*cellW+cellW/2,20+cell.r*cellH+cellH/2);
+    pathDrawn=true;
+  }
+}
+function drawPath(e){
+  if(!isDrawing)return;e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const p=e.touches?{x:e.touches[0].clientX-rect.left,y:e.touches[0].clientY-rect.top}:{x:e.clientX-rect.left,y:e.clientY-rect.top};
+  ctx.lineTo(p.x,p.y);ctx.stroke();
+}
+function endPath(){isDrawing=false}
+
+canvas.addEventListener('mousedown',startPath);
+canvas.addEventListener('mousemove',drawPath);
+canvas.addEventListener('mouseup',endPath);
+canvas.addEventListener('mouseleave',endPath);
+canvas.addEventListener('touchstart',startPath,{passive:false});
+canvas.addEventListener('touchmove',drawPath,{passive:false});
+canvas.addEventListener('touchend',endPath,{passive:false});
+
+// ── Load level ──
+function loadLevel(idx){
+  currentLevel=idx;
+  mazeData=genMaze(idx);
+  document.getElementById('levelText').textContent='第 '+(idx+1)+'/'+LEVELS.length+' 关';
+  document.getElementById('starsDisplay').textContent=completed.has(idx)?'⭐':'';
+  resizeCanvas();
+}
+
+document.getElementById('clearPathBtn').addEventListener('click',()=>{
+  pathDrawn=false;drawMaze();showToast('🗑️ 路线已清空');
+});
+
+document.getElementById('checkBtn').addEventListener('click',()=>{
+  if(!completed.has(currentLevel)){
+    completed.add(currentLevel);score++;
+    document.getElementById('scoreDisplay').textContent='⭐ '+score;
+    document.getElementById('starsDisplay').textContent='⭐';
+    showToast('🎉 过关了！太棒了！');
+    // Sound
+    try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(523,c.currentTime);g.gain.setValueAtTime(.15,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o.start();o.stop(c.currentTime+.15);setTimeout(function(){var o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(c.destination);o2.type='sine';o2.frequency.setValueAtTime(659,c.currentTime);g2.gain.setValueAtTime(.15,c.currentTime);g2.gain.exponentialRampToValueAtTime(.001,c.currentTime+.15);o2.start();o2.stop(c.currentTime+.15)},100);setTimeout(function(){var o3=c.createOscillator(),g3=c.createGain();o3.connect(g3);g3.connect(c.destination);o3.type='sine';o3.frequency.setValueAtTime(784,c.currentTime);g3.gain.setValueAtTime(.15,c.currentTime);g3.gain.exponentialRampToValueAtTime(.001,c.currentTime+.2);o3.start();o3.stop(c.currentTime+.2)},200)}catch(e){}
+  }else{showToast('已经过关了！试试下一关吧')}
+});
+
+document.getElementById('prevBtn').addEventListener('click',()=>{
+  if(currentLevel>0)loadLevel(currentLevel-1);
+  else showToast('已经是第一关了');
+});
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  if(currentLevel<LEVELS.length-1)loadLevel(currentLevel+1);
+  else showToast('🎉 恭喜通关全部关卡！');
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  completed=new Set();score=0;
+  document.getElementById('scoreDisplay').textContent='⭐ 0';
+  loadLevel(0);
+  showToast('🔄 全部重置');
+});
+
+let toastTimer;
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+
+// Init
+loadLevel(0);
+</script>
+</body>
+</html>
